@@ -14,7 +14,7 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/app-icon/wordcraft.ico")
-        .set("ProductName", "WordCraft")
+        .set("ProductName", "كلمة")
         .set("FileDescription", "WordCraft word processor")
         .set("CompanyName", "Learning Machines LLC")
         .set("LegalCopyright", "Copyright (c) the WordCraft authors. MIT OR Apache-2.0.")
