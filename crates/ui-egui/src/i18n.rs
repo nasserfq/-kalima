@@ -52,6 +52,10 @@ static I18N: LazyLock<I18n> = LazyLock::new(|| {
     i18n
 });
 
+/// كلمة is Arabic only: whenever its catalog is embedded, the interface is Arabic whatever the
+/// setting or system says (tests keep driving the UI in English).
+pub const ONLY_LANGUAGE: &str = "ar";
+
 /// The `language` setting that follows the system.
 pub const AUTO: &str = "auto";
 
@@ -238,6 +242,11 @@ impl Lang {
     /// Resolve the `language` setting: a language code, or [`AUTO`] (and anything unknown, e.g. a
     /// code from a newer version) to follow the system.
     pub fn from_pref(pref: &str) -> Lang {
+        if !cfg!(test)
+            && let Some(ar) = Lang::from_code(ONLY_LANGUAGE)
+        {
+            return ar;
+        }
         Lang::from_code(pref).unwrap_or_else(system_lang)
     }
 
@@ -252,6 +261,11 @@ impl Lang {
     /// Čeština sits under C rather than after Z. Names in other scripts follow the Latin ones in
     /// code point order: Greek, Cyrillic, Arabic, then the CJK languages.
     pub fn for_picker() -> Vec<Lang> {
+        if !cfg!(test)
+            && let Some(ar) = Lang::from_code(ONLY_LANGUAGE)
+        {
+            return vec![ar];
+        }
         let mut rest: Vec<Lang> = Lang::all().filter(|l| l.code() != Lang::EN.code()).collect();
         rest.sort_by_cached_key(|l| name_sort_key(l.name()));
         std::iter::once(Lang::EN).chain(rest).collect()
@@ -304,6 +318,9 @@ pub fn system_lang() -> Lang {
 fn detect_system_lang() -> Lang {
     // An explicit override, then the platform's preferred UI languages (Windows display language,
     // macOS preferred languages, `LC_ALL`/`LC_MESSAGES`/`LANG` on Unix, the browser on the web).
+    if let Some(ar) = Lang::from_code(ONLY_LANGUAGE) {
+        return ar;
+    }
     if let Some(l) = std::env::var("WORDCRAFT_LANGUAGE").ok().and_then(|v| lang_from_tag(&v)) {
         return l;
     }
