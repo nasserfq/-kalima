@@ -110,10 +110,12 @@ impl eframe::App for App {
         // Keep this frame's native window state. `logic` must not read the last painted
         // `InputState` when a hidden Wayland tick reports no fresh inner rect.
         self.4 = RawWindowState::from_raw(raw);
+        wordcraft_ui_egui::mirror::input(raw);
         self.0.raw_input_hook(ctx, raw);
     }
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         self.0.ui(ui);
+        wordcraft_ui_egui::mirror::output(ui.ctx());
         self.3.show(frame);
     }
     fn on_exit(&mut self) {

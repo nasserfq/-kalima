@@ -58,6 +58,7 @@ pub mod keys;
 pub mod keytips;
 mod local_time;
 pub mod mini_toolbar;
+pub mod mirror;
 pub mod objects;
 pub mod options;
 pub mod panes;
