@@ -1,12 +1,11 @@
 # كلمة
 
-**كلمة** معالج نصوص عربي بتصميم نجدي، مبني على [WordCraft](https://github.com/storytold/wordcraft).
+**كلمة** معالج نصوص عربي، مبني على [WordCraft](https://github.com/storytold/wordcraft).
 
 - الواجهة باللغة العربية.
-- ألوان مستوحاة من العمارة النجدية: لون الطين، وبياض الجص، والأحمر الطيني للأبواب المزخرفة.
 - الواجهة من اليمين إلى اليسار: قيد العمل.
 
-**Kalima (كلمة)** is an Arabic word processor with a Najdi-inspired design, based on
+**Kalima (كلمة)** is an Arabic word processor based on
 [WordCraft](https://github.com/storytold/wordcraft) by the ArtCraft team. It is an independent
 project and is not made, sponsored or endorsed by the ArtCraft team.
 
