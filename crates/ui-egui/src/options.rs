@@ -394,6 +394,7 @@ fn language_name(lang: wordcraft_engine::proof::ProofLang) -> &'static str {
         ProofLang::EsMx => tl!("Spanish (Mexico)"),
         ProofLang::Es419 => tl!("Spanish (Latin America)"),
         ProofLang::EsUy => tl!("Spanish (Uruguay)"),
+        ProofLang::Ar => "العربية",
         // English uses its bundled word list; Bulgarian and German have no dictionary yet.
         ProofLang::En | ProofLang::EnGb | ProofLang::EnCa | ProofLang::Bg | ProofLang::De | ProofLang::Other => "",
     }
@@ -485,6 +486,13 @@ fn language(app: &mut WordApp, ui: &mut Ui) {
             .unwrap_or_else(|| crate::i18n::fmt(tl!("Spelling and grammar are checked in {language}."), &[("language", &lang)]))
     };
     ui.label(RichText::new(text).small().weak());
+    // Arabic words are spelled in Arabic whatever the text's language (wordcraft_proof::ar).
+    let arabic = if wordcraft_engine::proof::ar::has_speller() {
+        "تُدقَّق الكلمات العربية إملائيًا بمدقق النظام."
+    } else {
+        "لا يتوفر مدقق إملائي عربي على هذا النظام."
+    };
+    ui.label(RichText::new(arabic).small().weak());
 }
 
 /// Draws Accessibility options: the animation setting and Read Aloud speed and skip-citations.

@@ -50,6 +50,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod affix;
+pub mod ar;
 pub mod bg;
 pub mod cs;
 pub mod dict;
@@ -709,7 +710,9 @@ fn spelling_issues(text: &str, lang: impl Fn(usize) -> ProofLang, opts: &Options
             if a < token.0 || a >= token.1 {
                 token = enclosing_token(text, a, b);
             }
-            spelling_issue(text, a, b, lang(a), opts, token.2)
+            // An Arabic-script word is spelled in Arabic whatever its run's language.
+            let l = if text.get(a..b).is_some_and(ar::is_arabic_word) { ProofLang::Ar } else { lang(a) };
+            spelling_issue(text, a, b, l, opts, token.2)
         })
         .collect()
 }
@@ -749,6 +752,7 @@ fn spelling_issue(text: &str, a: usize, b: usize, lang: ProofLang, opts: &Option
         ProofLang::Cs => "Možná pravopisná chyba",
         ProofLang::Id => "Kemungkinan salah eja",
         ProofLang::Es | ProofLang::EsMx | ProofLang::Es419 | ProofLang::EsUy => "Posible error ortográfico",
+        ProofLang::Ar => "خطأ إملائي محتمل",
         _ => "Possible spelling mistake",
     };
     Some(Issue { start: a, end: b, kind: IssueKind::Spelling, message: message.into(), suggestions: Vec::new(), lang })
@@ -787,6 +791,7 @@ pub fn is_correct_in_with(word: &str, lang: ProofLang, opts: &Options) -> bool {
         }
         ProofLang::Cs => accepted_by_options(word, opts) || cs::is_correct_with_options(word, opts),
         ProofLang::Id => accepted_by_options(word, opts) || id::is_correct_with_options(word, opts),
+        ProofLang::Ar => accepted_by_options(word, opts) || ar::is_correct(word),
         ProofLang::Bg | ProofLang::De | ProofLang::Other => true,
     }
 }
@@ -806,6 +811,7 @@ pub fn suggest_in(word: &str, max: usize, lang: ProofLang) -> Vec<String> {
         ProofLang::Cs => cs::suggest(word, max),
         ProofLang::Id => id::suggest(word, max),
         ProofLang::Es | ProofLang::EsMx | ProofLang::Es419 | ProofLang::EsUy => es::suggest(word, max, lang),
+        ProofLang::Ar => ar::suggest(word, max),
         ProofLang::Bg | ProofLang::De | ProofLang::Other => Vec::new(),
     }
 }
@@ -835,7 +841,7 @@ fn grammar_in(text: &str, lang: ProofLang, capital_first: bool) -> Vec<Issue> {
         ProofLang::Id => id::grammar::check(text),
         // Spanish has no sentence-capital rule either.
         ProofLang::Es | ProofLang::EsMx | ProofLang::Es419 | ProofLang::EsUy => es::grammar::check(text, lang),
-        ProofLang::Bg | ProofLang::De | ProofLang::Other => Vec::new(),
+        ProofLang::Bg | ProofLang::De | ProofLang::Ar | ProofLang::Other => Vec::new(),
     }
 }
 
