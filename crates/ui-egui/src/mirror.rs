@@ -24,7 +24,7 @@ thread_local! {
 
 /// Is the interface mirrored? Whenever the interface is Arabic (outside tests).
 pub fn active() -> bool {
-    !cfg!(test) && crate::i18n::Lang::from_pref(crate::i18n::AUTO).code() == crate::i18n::ONLY_LANGUAGE
+    !cfg!(test) && crate::i18n::current().code() == crate::i18n::ONLY_LANGUAGE
 }
 
 /// The document area this frame (rulers and pages): moved, not mirrored.

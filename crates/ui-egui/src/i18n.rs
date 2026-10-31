@@ -52,8 +52,8 @@ static I18N: LazyLock<I18n> = LazyLock::new(|| {
     i18n
 });
 
-/// كلمة is Arabic only: whenever its catalog is embedded, the interface is Arabic whatever the
-/// setting or system says (tests keep driving the UI in English).
+/// كلمة's main language: whenever its catalog is embedded the interface is Arabic, unless English
+/// is picked in File › Options (the only other choice). Tests keep driving the UI in English.
 pub const ONLY_LANGUAGE: &str = "ar";
 
 /// The `language` setting that follows the system.
@@ -245,7 +245,8 @@ impl Lang {
         if !cfg!(test)
             && let Some(ar) = Lang::from_code(ONLY_LANGUAGE)
         {
-            return ar;
+            // Arabic unless English was picked.
+            return if pref.eq_ignore_ascii_case(Lang::EN.code()) { Lang::EN } else { ar };
         }
         Lang::from_code(pref).unwrap_or_else(system_lang)
     }
@@ -264,7 +265,7 @@ impl Lang {
         if !cfg!(test)
             && let Some(ar) = Lang::from_code(ONLY_LANGUAGE)
         {
-            return vec![ar];
+            return vec![ar, Lang::EN];
         }
         let mut rest: Vec<Lang> = Lang::all().filter(|l| l.code() != Lang::EN.code()).collect();
         rest.sort_by_cached_key(|l| name_sort_key(l.name()));
