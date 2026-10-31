@@ -16,7 +16,7 @@ Same as WordCraft: install Rust, then from a checkout of
 [storytold/craft-i18n](https://github.com/storytold/craft-i18n) at the commit in `craft-i18n.rev`:
 
 ```sh
-CRAFT_I18N_DIR=/path/to/craft-i18n cargo run --release -p wordcraft
+CRAFT_I18N_DIR="$HOME/path/to/craft-i18n" cargo run --release -p wordcraft   # must be an absolute path
 ```
 
 Pick العربية in File › Options › Interface language (or run with an Arabic system language).
