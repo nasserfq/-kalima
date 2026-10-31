@@ -139,9 +139,7 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                     }
                     ui.painter().text(pos2(r.min.x + 22.0, r.center().y), Align2::LEFT_CENTER, tl!(label), regular(13.0), egui::Color32::WHITE);
                     if resp.clicked() {
-                        if id == "discord" {
-                            let _ = app.run("ui.discord", json!({}));
-                        } else {
+                        if id == "about" {
                             app.dialog = crate::dialogs::Dialog::open("about", app);
                         }
                     }
