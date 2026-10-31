@@ -1,47 +1,88 @@
 name: Release
 
+# A push to `release` builds كلمة for macOS, Windows and Linux and publishes the downloads as a
+# GitHub release. Unsigned: macOS and Windows warn about an unknown developer on first open.
 on:
   push:
     branches: [release]
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version override for a test run, e.g. 0.2.0-rc.1 (empty: Cargo.toml)"
-        type: string
-        default: ""
 
 permissions:
   contents: read
 
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
-  release:
-    # Only this job publishes the GitHub release, so only it gets write access.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            name: macos-arm64
+          - os: windows-latest
+            name: windows-x64
+          - os: ubuntu-22.04
+            name: linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Interface translations at the pinned commit
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/storytold/craft-i18n "$RUNNER_TEMP/craft-i18n"
+          git -C "$RUNNER_TEMP/craft-i18n" checkout "$(cat craft-i18n.rev)"
+          echo "CRAFT_I18N_DIR=$RUNNER_TEMP/craft-i18n" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libxkbcommon-dev libwayland-dev libx11-dev \
+            libxcursor-dev libxrandr-dev libxi-dev libgtk-3-dev libfontconfig1-dev libfreetype-dev
+      - name: macOS app (DMG)
+        if: runner.os == 'macOS'
+        run: |
+          DIST="$PWD/out" packaging/macos/package.sh --arch aarch64
+          mv out/*.dmg "out/Kalima-${{ matrix.name }}.dmg"
+          rm -f out/*.zip
+      - name: Windows and Linux builds
+        if: runner.os != 'macOS'
+        shell: bash
+        run: |
+          cargo build --release --locked -p wordcraft
+          mkdir -p out/Kalima
+          cp LICENSE-MIT LICENSE-APACHE NOTICE out/Kalima/
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            cp target/release/wordcraft.exe out/Kalima/Kalima.exe
+            (cd out && 7z a "Kalima-${{ matrix.name }}.zip" Kalima >/dev/null)
+          else
+            cp target/release/wordcraft out/Kalima/kalima
+            tar -C out -czf "out/Kalima-${{ matrix.name }}.tar.gz" Kalima
+          fi
+          rm -rf out/Kalima
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: out/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    # Intentionally tracked at @main (not SHA-pinned) so org-wide CI improvements, security fixes, and build optimizations propagate without PR churn across all craftapp repos.
-    uses: storytold/craft-common-actions/.github/workflows/release.yml@main
-    with:
-      app-name: wordcraft
-      app-title: Kalima
-      craft-fonts-ref: b076417b5880bd4154bd22f00695b1d28c6bea83
-      web-craft-fonts: true
-      version: ${{ inputs.version }}
-    secrets:
-      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
-      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
-      AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
-      AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: kalima-${{ github.run_number }}
+          name: كلمة ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: dist/*
+          body: |
+            كلمة: معالج نصوص عربي مبني على WordCraft من فريق ArtCraft.
+
+            - macOS (Apple Silicon): `Kalima-macos-arm64.dmg`. First open: right-click › Open.
+            - Windows: `Kalima-windows-x64.zip`, unzip and run `Kalima.exe`.
+            - Linux: `Kalima-linux-x64.tar.gz`, extract and run `kalima`.
