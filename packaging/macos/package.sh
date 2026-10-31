@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build, sign and (optionally) notarize the macOS release artifacts:
 #
-#   $DIST/wordcraft-<version>-macos-<arch>.dmg          WordCraft.app on a drag-to-Applications DMG
+#   $DIST/wordcraft-<version>-macos-<arch>.dmg          كلمة.app on a drag-to-Applications DMG
 #   $DIST/wordcraft-cli-<version>-macos-<arch>.zip      the headless CLI
 #
 # Usage: packaging/macos/package.sh [--arch universal|aarch64|x86_64] [--skip-build]
@@ -39,7 +39,7 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 IDENTITY="${MACOS_SIGN_IDENTITY:--}"
 SHORT_VERSION="${VERSION%%-*}"
 WORK="$CARGO_TARGET_DIR/macos-package"
-APP="$WORK/WordCraft.app"
+APP="$WORK/كلمة.app"
 DMG="$DIST/wordcraft-$VERSION-macos-$ARCH.dmg"
 CLI_ZIP="$DIST/wordcraft-cli-$VERSION-macos-$ARCH.zip"
 
@@ -112,7 +112,7 @@ notarize() {
   fi
 }
 
-# ---- WordCraft.app ----------------------------------------------------------------------------
+# ---- كلمة.app ----------------------------------------------------------------------------
 echo "==> assembling $APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # Executable and icon carry the display name (CFBundleExecutable / CFBundleIconFile).
@@ -148,7 +148,7 @@ fi
 echo "==> building $DMG"
 STAGE="$WORK/dmg"
 mkdir -p "$STAGE"
-ditto "$APP" "$STAGE/WordCraft.app"
+ditto "$APP" "$STAGE/كلمة.app"
 ln -s /Applications "$STAGE/Applications"
 # Finder window layout: background, icon size and positions (packaging/macos/dmg/README.md).
 mkdir -p "$STAGE/.background"
@@ -178,7 +178,7 @@ hdiutil_retry() {
 # (Finder location -1,-1), so the signed app failed `codesign --verify --deep --strict` inside the
 # mounted DMG and after copying it out (#525). The volume name has no version: .DS_Store finds the
 # background through an alias that includes it.
-hdiutil_retry create -srcfolder "$STAGE" -volname "WordCraft" -fs HFS+ -format UDZO \
+hdiutil_retry create -srcfolder "$STAGE" -volname "كلمة" -fs HFS+ -format UDZO \
   -imagekey zlib-level=9 -ov "$DMG"
 sign "$DMG"
 codesign --verify --strict --verbose=2 "$DMG"
@@ -190,21 +190,21 @@ verify_dmg_app() {
   local dmg="$1" mount="$WORK/dmg-check" copy="$WORK/dmg-check-copy" rc=0
   mkdir -p "$mount" "$copy"
   hdiutil_retry attach -readonly -nobrowse -noautoopen -mountpoint "$mount" "$dmg" >/dev/null
-  echo "==> strict signature check of WordCraft.app inside $(basename "$dmg")"
-  codesign --verify --deep --strict --verbose=2 "$mount/WordCraft.app" || rc=1
+  echo "==> strict signature check of كلمة.app inside $(basename "$dmg")"
+  codesign --verify --deep --strict --verbose=2 "$mount/كلمة.app" || rc=1
   if [[ "$rc" = 0 ]]; then
-    ditto "$mount/WordCraft.app" "$copy/WordCraft.app" || rc=1
+    ditto "$mount/كلمة.app" "$copy/كلمة.app" || rc=1
   fi
   if [[ "$rc" = 0 ]]; then
     echo "==> strict signature check of a ditto copy of it"
-    codesign --verify --deep --strict --verbose=2 "$copy/WordCraft.app" || rc=1
+    codesign --verify --deep --strict --verbose=2 "$copy/كلمة.app" || rc=1
   fi
   if [[ "$rc" = 0 ]] && [[ "$NOTARIZE" = 1 ]]; then
-    spctl --assess --type execute -vvv "$copy/WordCraft.app" || rc=1
+    spctl --assess --type execute -vvv "$copy/كلمة.app" || rc=1
   fi
   if [[ "$rc" != 0 ]]; then
-    echo "error: WordCraft.app in $(basename "$dmg") fails strict verification; extended attributes:" >&2
-    xattr -lr "$mount/WordCraft.app" >&2 || true
+    echo "error: كلمة.app in $(basename "$dmg") fails strict verification; extended attributes:" >&2
+    xattr -lr "$mount/كلمة.app" >&2 || true
   fi
   hdiutil_retry detach "$mount" >/dev/null || hdiutil detach "$mount" -force >/dev/null || rc=1
   rm -rf "$copy"
