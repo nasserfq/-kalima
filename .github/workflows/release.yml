@@ -40,8 +40,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends pkg-config libxkbcommon-dev libwayland-dev libx11-dev \
             libxcursor-dev libxrandr-dev libxi-dev libgtk-3-dev libfontconfig1-dev libfreetype-dev
-      - name: macOS app (DMG)
+      - name: macOS signing certificate
         if: runner.os == 'macOS'
+        # Signed and notarized when these repository secrets exist; otherwise ad-hoc (unsigned).
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          packaging/macos/import-cert.sh  # sets MACOS_SIGN_IDENTITY for the next step
+      - name: macOS app (DMG), build
+        if: runner.os == 'macOS'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           DIST="$PWD/out" packaging/macos/package.sh --arch universal
           mv out/*.dmg "out/Kalima-${{ matrix.name }}.dmg"
