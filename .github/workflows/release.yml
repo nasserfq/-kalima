@@ -25,12 +25,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Interface translations at the pinned commit
+      - name: Interface translations (with Arabic)
         shell: bash
         run: |
-          git clone --filter=blob:none https://github.com/storytold/craft-i18n "$RUNNER_TEMP/craft-i18n"
-          git -C "$RUNNER_TEMP/craft-i18n" checkout "$(cat craft-i18n.rev)"
+          # Nasser's fork: the pinned upstream commit has no Arabic WordCraft catalog.
+          git clone --depth 1 -b ar-wordcraft-missing-rows https://github.com/nasserfq/craft-i18n "$RUNNER_TEMP/craft-i18n"
+          test -s "$RUNNER_TEMP/craft-i18n/locales/ar/wordcraft.tsv"
           echo "CRAFT_I18N_DIR=$RUNNER_TEMP/craft-i18n" >> "$GITHUB_ENV"
+          echo "CRAFT_I18N_REQUIRED=1" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
