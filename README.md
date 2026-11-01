@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nasserfq/-kalima/releases/latest"><b>⬇︎ تنزيل · Download</b></a>
+  <a href="https://github.com/nasserfq/kalima/releases/latest"><b>⬇︎ تنزيل · Download</b></a>
   &nbsp;·&nbsp; macOS &nbsp;·&nbsp; Windows &nbsp;·&nbsp; Linux
 </p>
 

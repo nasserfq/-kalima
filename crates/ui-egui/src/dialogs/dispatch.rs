@@ -1090,7 +1090,7 @@ fn about_dialog(ui: &mut Ui, d: &mut Dialog) -> bool {
             ui.label(crate::i18n::fmt(tl!("Version {version} ({build})"), &[("version", env!("CARGO_PKG_VERSION")), ("build", build)]));
             ui.label("معالج نصوص عربي مجاني ومفتوح المصدر، من تطوير ناصر القحطاني.\nمبني على WordCraft، مع الشكر لفريق ArtCraft على عملهم الأصلي.");
             ui.add_space(6.0);
-            ui.hyperlink_to("github.com/nasserfq/-kalima", "https://github.com/nasserfq/-kalima");
+            ui.hyperlink_to("github.com/nasserfq/kalima", "https://github.com/nasserfq/kalima");
             ui.add_space(6.0);
             // WordCraft's copyright notice ships in LICENSE-MIT / LICENSE-APACHE beside the app.
             ui.label(egui::RichText::new("كلمة © 2026 ناصر القحطاني. الترخيص: MIT أو Apache-2.0.").small().weak());
