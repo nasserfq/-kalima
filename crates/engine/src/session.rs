@@ -18,6 +18,7 @@ pub use views::WindowView;
 mod history;
 mod ime;
 mod layout;
+pub(crate) use layout::write_in;
 mod lifecycle;
 mod query;
 mod run;

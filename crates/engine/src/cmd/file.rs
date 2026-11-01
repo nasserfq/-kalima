@@ -230,7 +230,7 @@ fn new(s: &mut Session, v: &Value) -> CmdResult {
 pub(crate) fn normal_document(s: &Session) -> Document {
     let mut d = s.blank_document();
     if let Some(lang) = s.prefs.default_language.as_ref().or(s.editing_lang.as_ref()) {
-        d.styles.default_chr.lang = Some(lang.clone());
+        crate::session::write_in(&mut d.styles, lang);
     }
     d
 }

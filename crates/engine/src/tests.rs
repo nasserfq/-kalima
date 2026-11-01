@@ -11579,3 +11579,13 @@ fn export_png_rejects_a_page_number_that_does_not_fit() {
     assert!(!target.exists(), "no file is written for an invalid page");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn arabic_documents_read_right_to_left_from_the_start() {
+    let mut styles = wordcraft_doc::styles::StyleSheet::builtin();
+    crate::session::write_in(&mut styles, "ar-SA");
+    assert_eq!((styles.default_chr.lang.as_deref(), styles.default_chr.lang_bidi.as_deref()), (Some("ar-SA"), Some("ar-SA")));
+    assert_eq!(styles.default_para.bidi, Some(true));
+    crate::session::write_in(&mut styles, "en-US");
+    assert_eq!((styles.default_chr.lang.as_deref(), styles.default_para.bidi), (Some("en-US"), None), "back to left to right");
+}

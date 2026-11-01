@@ -198,7 +198,7 @@ impl Session {
         self.editing_lang = tag;
         let untouched = self.path.is_none() && !self.dirty && self.history.is_empty() && self.redo.is_empty();
         if untouched && self.doc.plain_text(StoryRef::Body).trim().is_empty() && self.doc.paragraph_count() <= 1 {
-            self.doc.styles.default_chr.lang = Some(self.editing_lang.clone().unwrap_or_else(|| "en-US".into()));
+            write_in(&mut self.doc.styles, self.editing_lang.as_deref().unwrap_or("en-US"));
             self.rev = self.rev.wrapping_add(1);
             // Not an edit: the document is as untouched as it was.
             if self.made_rev == self.rev.wrapping_sub(1) {
@@ -207,4 +207,16 @@ impl Session {
             self.relayout();
         }
     }
+}
+
+/// New documents are written in `lang`; an Arabic (or other right-to-left) one also reads right
+/// to left from the first paragraph.
+pub(crate) fn write_in(styles: &mut wordcraft_doc::styles::StyleSheet, lang: &str) {
+    let primary = lang.split(['-', '_']).next().unwrap_or("").to_ascii_lowercase();
+    let rtl = matches!(primary.as_str(), "ar" | "he" | "fa" | "ur");
+    styles.default_chr.lang = Some(lang.to_string());
+    if rtl {
+        styles.default_chr.lang_bidi = Some(lang.to_string());
+    }
+    styles.default_para.bidi = rtl.then_some(true);
 }
