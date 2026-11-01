@@ -132,7 +132,7 @@ pub static LANGUAGES: [LangInfo; 28] = [
     LangInfo { code: "sl", prefer_hans: false, editing_lang: None },
     // Arabic; `ar`, `ar-SA`, `ar-EG` and other regions resolve here. Labels are shaped and bidi-ordered
     // by the egui fork; the interface itself is not mirrored yet.
-    LangInfo { code: "ar", prefer_hans: false, editing_lang: None },
+    LangInfo { code: "ar", prefer_hans: false, editing_lang: Some("ar-SA") },
 ];
 
 /// A language the UI can be shown in: English, or an offered language whose catalogs are embedded.

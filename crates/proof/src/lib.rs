@@ -1047,9 +1047,9 @@ mod tests {
             assert_eq!(dictionary_needed(l, false), Some(name), "{l:?}");
             assert_eq!(dictionary_needed(l, true), None, "{l:?}");
         }
-        // Every proofed language other than English has a Hunspell dictionary to report.
+        // Every proofed language other than English and Arabic (the system speller) has a Hunspell dictionary to report.
         for l in ProofLang::PROOFED {
-            let english = matches!(l, ProofLang::En | ProofLang::EnGb | ProofLang::EnCa);
+            let english = matches!(l, ProofLang::En | ProofLang::EnGb | ProofLang::EnCa | ProofLang::Ar);
             assert_eq!(dictionary_needed(l, false).is_some(), !english, "{l:?}");
         }
         for l in [ProofLang::En, ProofLang::Bg, ProofLang::De, ProofLang::Other] {
