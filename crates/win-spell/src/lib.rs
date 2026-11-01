@@ -5,6 +5,15 @@
 //! Each thread gets its own COM initialization and its own checker, so the background proofing
 //! passes can call this from any thread. On other systems every call answers "no checker".
 
+/// Install Windows' spell checking for `lang` (its "Basic typing" language feature, from Windows
+/// Update), without adding it as a display or keyboard language. Windows asks the user to allow
+/// it (administrator prompt); this waits until the install ends. True when `lang` can then be
+/// checked.
+pub fn install(lang: &str) -> bool {
+    imp::install(lang);
+    is_supported(lang)
+}
+
 /// Can Windows check spelling in `lang` (a BCP 47 tag such as `ar-SA`)?
 pub fn is_supported(lang: &str) -> bool {
     imp::with_checker(lang, |_| ()).is_some()
@@ -30,8 +39,9 @@ mod imp {
     use windows::core::{HRESULT, HSTRING, PWSTR};
 
     thread_local! {
-        /// This thread's checkers by language (`None`: Windows can't check that language).
-        static CHECKERS: RefCell<HashMap<String, Option<ISpellChecker>>> = RefCell::new(HashMap::new());
+        /// This thread's checkers by language. Languages Windows can't check aren't kept, so one
+        /// installed while the app runs is picked up.
+        static CHECKERS: RefCell<HashMap<String, ISpellChecker>> = RefCell::new(HashMap::new());
     }
 
     fn create(lang: &str) -> Option<ISpellChecker> {
@@ -51,9 +61,28 @@ mod imp {
     pub fn with_checker<R>(lang: &str, f: impl FnOnce(&ISpellChecker) -> R) -> Option<R> {
         CHECKERS.with(|map| {
             let mut map = map.borrow_mut();
-            let checker = map.entry(lang.to_string()).or_insert_with(|| create(lang));
-            checker.as_ref().map(f)
+            if !map.contains_key(lang) {
+                map.insert(lang.to_string(), create(lang)?);
+            }
+            map.get(lang).map(f)
         })
+    }
+
+    pub fn install(lang: &str) {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        if !lang.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+            return;
+        }
+        let inner = format!("Add-WindowsCapability -Online -Name Language.Basic~~~{lang}~0.0.1.0");
+        let outer = format!("Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile','-Command','{inner}'");
+        let status = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", &outer])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+        if let Err(e) = status {
+            log::warn!("spell checking install for {lang}: {e}");
+        }
     }
 
     pub fn check(checker: &ISpellChecker, word: &str) -> Option<bool> {
@@ -99,6 +128,7 @@ mod imp {
     pub fn with_checker<R>(_lang: &str, _f: impl FnOnce(&Never) -> R) -> Option<R> {
         None
     }
+    pub fn install(_lang: &str) {}
     pub fn check(c: &Never, _word: &str) -> Option<bool> {
         match *c {}
     }

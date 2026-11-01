@@ -2829,6 +2829,7 @@ dependencies = [
 name = "kalima-win-spell"
 version = "0.13.2"
 dependencies = [
+ "log",
  "windows",
 ]
 

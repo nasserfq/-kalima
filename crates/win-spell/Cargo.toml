@@ -10,6 +10,9 @@ description = "Windows' own spell checker (the Spell Checking API, ISpellChecker
 [lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 
+[dependencies]
+log = { workspace = true }
+
 [target.'cfg(windows)'.dependencies]
 # Already in the build (wgpu, AccessKit, the app's UISettings), at this version; this adds the
 # Spell Checking API and COM bindings.
