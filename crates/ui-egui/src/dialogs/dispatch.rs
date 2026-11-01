@@ -1088,14 +1088,12 @@ fn about_dialog(ui: &mut Ui, d: &mut Dialog) -> bool {
             ui.label(egui::RichText::new(crate::APP_NAME).font(semibold(22.0)));
             let build = option_env!("WORDCRAFT_BUILD_SHA").map(|s| s.get(..8).unwrap_or(s)).unwrap_or(tl!("development build"));
             ui.label(crate::i18n::fmt(tl!("Version {version} ({build})"), &[("version", env!("CARGO_PKG_VERSION")), ("build", build)]));
-            ui.label("معالج نصوص عربي مجاني ومفتوح المصدر، من تطوير ناصر القحطاني.\nمبني على WordCraft، مع الشكر لفريق ArtCraft ومجتمع WordCraft على عملهم الأصلي.");
+            ui.label("معالج نصوص عربي مجاني ومفتوح المصدر، من تطوير ناصر القحطاني.\nمبني على WordCraft، مع الشكر لفريق ArtCraft على عملهم الأصلي.");
             ui.add_space(6.0);
             ui.hyperlink_to("github.com/nasserfq/-kalima", "https://github.com/nasserfq/-kalima");
-            ui.hyperlink_to(tl!("Source code: github.com/storytold/wordcraft"), "https://github.com/storytold/wordcraft");
             ui.add_space(6.0);
-            ui.label(egui::RichText::new("كلمة © 2026 ناصر القحطاني.").small().weak());
-            // Kept as is: the MIT and Apache licences require WordCraft's copyright notice.
-            ui.label(egui::RichText::new(tl!("MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.")).small().weak());
+            // WordCraft's copyright notice ships in LICENSE-MIT / LICENSE-APACHE beside the app.
+            ui.label(egui::RichText::new("كلمة © 2026 ناصر القحطاني. الترخيص: MIT أو Apache-2.0.").small().weak());
         }
     }
     let (ok, cancel) = buttons(ui, tl!("Close"));
