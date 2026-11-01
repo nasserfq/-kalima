@@ -1,0 +1,16 @@
+[package]
+name = "kalima-win-spell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Windows' own spell checker (the Spell Checking API, ISpellChecker) behind a safe API, for Arabic proofing in كلمة"
+
+# Not the workspace lints: COM calls need `unsafe`, which the rest of the workspace forbids. This
+# crate keeps that unsafe code in one small, reviewed place behind a safe API.
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[target.'cfg(windows)'.dependencies]
+# Already in the build (wgpu, AccessKit, the app's UISettings), at this version; this adds the
+# Spell Checking API and COM bindings.
+windows = { version = "0.62", features = ["Win32_Globalization", "Win32_System_Com"] }

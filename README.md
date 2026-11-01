@@ -24,7 +24,7 @@
 
 - **واجهة عربية بالكامل** من اليمين إلى اليسار، مع خيار الإنجليزية.
 - **مستندات من اليمين إلى اليسار** افتراضيًا.
-- **تدقيق إملائي عربي** بمدقق النظام في macOS.
+- **تدقيق إملائي عربي** بمدقق النظام في macOS وWindows.
 - **ملفات Word** ‏(‎.docx‎) فتحًا وحفظًا.
 
 ## التثبيت
@@ -36,6 +36,13 @@
 | Linux | `Kalima-linux-x64.tar.gz` | فك الضغط وشغّل `kalima`. |
 
 للتحديث: نزّل الإصدار الجديد واستبدل به القديم، وتبقى إعداداتك ومستنداتك كما هي.
+
+## ما أضافه ناصر القحطاني إلى WordCraft
+
+- الواجهة العربية افتراضيًا، والاتجاه من اليمين إلى اليسار في الواجهة والمستندات.
+- التدقيق الإملائي العربي بمدقق النظام في macOS وWindows.
+- خط Noto Sans Arabic بحجم مريح للقراءة.
+- الاسم والشعار، وتطبيق Mac موقّع وموثَّق لأجهزة Apple Silicon وIntel، وتنزيلات Windows وLinux.
 
 ## شكر
 
@@ -49,7 +56,11 @@
 
 Kalima (كلمة) is an Arabic-first word processor by Nasser Alqahtani: an Arabic, right-to-left
 interface (English available), right-to-left Arabic documents by default, Arabic spell checking
-(macOS system speller) and Word `.docx` files.
+(the macOS and Windows system spell checkers) and Word `.docx` files.
+
+Nasser's additions to WordCraft: the Arabic interface as the default, right-to-left interface and
+documents, Arabic spell checking through the macOS and Windows system spell checkers, the Noto Sans
+Arabic font, the name and logo, and the signed universal Mac app and Windows and Linux downloads.
 
 It is based on [WordCraft](https://github.com/storytold/wordcraft) by the ArtCraft team. Kalima is an
 independent project, not made, sponsored or endorsed by the ArtCraft team.

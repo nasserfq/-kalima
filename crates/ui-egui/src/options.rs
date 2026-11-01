@@ -489,6 +489,8 @@ fn language(app: &mut WordApp, ui: &mut Ui) {
     // Arabic words are spelled in Arabic whatever the text's language (wordcraft_proof::ar).
     let arabic = if wordcraft_engine::proof::ar::has_speller() {
         "تُدقَّق الكلمات العربية إملائيًا بمدقق النظام."
+    } else if cfg!(windows) {
+        "لا يتوفر مدقق إملائي عربي. أضف اللغة العربية من إعدادات Windows › الوقت واللغة › اللغة والمنطقة، ثم أعد تشغيل كلمة."
     } else {
         "لا يتوفر مدقق إملائي عربي على هذا النظام."
     };

@@ -2826,6 +2826,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kalima-win-spell"
+version = "0.13.2"
+dependencies = [
+ "windows",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6660,6 +6667,7 @@ dependencies = [
  "egui",
  "fmv-macos-events",
  "getrandom 0.3.4",
+ "kalima-win-spell",
  "log",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",

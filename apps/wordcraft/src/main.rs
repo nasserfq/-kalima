@@ -14,6 +14,9 @@ mod animations;
 mod apple_events;
 #[cfg(target_os = "macos")]
 mod arabic_spelling;
+#[cfg(windows)]
+#[path = "arabic_spelling_windows.rs"]
+mod arabic_spelling;
 mod clipboard;
 mod control_server;
 mod default_apps;
@@ -382,7 +385,7 @@ fn main() -> eframe::Result {
     // First, so the panic hook and every start-up warning are recorded (`logging`).
     let logger = logging::install();
     logging::install_panic_hook();
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", windows))]
     arabic_spelling::register();
     let mut control_port: Option<u16> = std::env::var("WORDCRAFT_CONTROL_PORT").ok().and_then(|p| p.parse().ok());
     let mut files = Vec::new();

@@ -60,6 +60,8 @@ zbus = { version = "5", default-features = false, features = ["async-io", "block
 wl-clipboard-rs = "0.9"
 
 [target.'cfg(target_os = "windows")'.dependencies]
+# Arabic spelling through Windows' own spell checker (COM, so its unsafe code lives in that crate).
+kalima-win-spell = { path = "../../crates/win-spell" }
 # The upstream default-apps button opens Windows Settings; printing uses craft-print instead.
 open = "5"
 # The system's Animation effects setting (Settings › Accessibility › Visual effects), read through
