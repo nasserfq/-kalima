@@ -103,7 +103,7 @@ impl Session {
             goal_x,
             page_hint,
             registry,
-            author: "WordCraft User".into(),
+            author: "مستخدم كلمة".into(),
             initials: String::new(),
             painter: None,
             status: String::new(),

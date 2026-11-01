@@ -47,10 +47,32 @@ include!(concat!(env!("OUT_DIR"), "/craft_i18n.rs"));
 /// a locale is parsed on its first lookup.
 static I18N: LazyLock<I18n> = LazyLock::new(|| {
     let offered: Vec<&str> = LANGUAGES.iter().map(|l| l.code).collect();
-    let (i18n, problems) = I18n::new(CRAFT_I18N, &offered);
+    // The catalogs' translations say WordCraft; كلمة shows its own name (sources stay as looked up).
+    let catalogs: Vec<_> = CRAFT_I18N.iter().map(|&(code, shared, app)| (code, rebrand(shared), rebrand(app))).collect();
+    let (i18n, problems) = I18n::new(Box::leak(catalogs.into_boxed_slice()), &offered);
     problems.iter().for_each(|p| log::warn!("interface catalogs: {p}"));
     i18n
 });
+
+/// `tsv` with "WordCraft" replaced by [`crate::APP_NAME`] in the translation columns (after the
+/// context and source columns), so lookups by English source still match.
+fn rebrand(tsv: &'static str) -> &'static str {
+    if !tsv.contains("WordCraft") {
+        return tsv;
+    }
+    let mut out = String::with_capacity(tsv.len());
+    for line in tsv.lines() {
+        match line.match_indices('\t').nth(1) {
+            Some((i, _)) => {
+                out.push_str(&line[..i]);
+                out.push_str(&line[i..].replace("WordCraft", crate::APP_NAME));
+            }
+            None => out.push_str(line),
+        }
+        out.push('\n');
+    }
+    Box::leak(out.into_boxed_str())
+}
 
 /// كلمة's main language: whenever its catalog is embedded the interface is Arabic, unless English
 /// is picked in File › Options (the only other choice). Tests keep driving the UI in English.

@@ -1189,3 +1189,9 @@ fn the_flatpak_manifest_pins_the_craft_i18n_rev() {
     assert_eq!(commit.trim().trim_matches(['\'', '"']), rev);
     assert!(manifest.contains("CRAFT_I18N_DIR: /run/build/wordcraft/craft-i18n"), "the build embeds the catalogs");
 }
+
+#[test]
+fn translations_say_kalima_but_sources_stay() {
+    let tsv: &'static str = "# WordCraft catalog\n\tOpen WordCraft\tافتح WordCraft\n\tSave\tحفظ\n";
+    assert_eq!(super::rebrand(tsv), "# WordCraft catalog\n\tOpen WordCraft\tافتح كلمة\n\tSave\tحفظ\n");
+}
