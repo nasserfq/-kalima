@@ -67,7 +67,7 @@ jobs:
         run: |
           cargo build --release --locked -p wordcraft
           mkdir -p out/Kalima
-          cp LICENSE-MIT LICENSE-APACHE NOTICE out/Kalima/
+          cp LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md assets/fonts/OFL-*.txt out/Kalima/
           if [[ "$RUNNER_OS" == Windows ]]; then
             cp target/release/wordcraft.exe out/Kalima/Kalima.exe
             (cd out && 7z a "Kalima-${{ matrix.name }}.zip" Kalima >/dev/null)

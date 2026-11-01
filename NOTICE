@@ -1,11 +1,18 @@
-WordCraft
-Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.
-Licensed under the MIT License or the Apache License, Version 2.0, at your option
+كلمة (Kalima)
+Copyright (c) 2026 Nasser Alqahtani.
+A modified version of WordCraft: Nasser Alqahtani changed its files for the Arabic, right-to-left
+كلمة (2026); every change is recorded in the history of https://github.com/nasserfq/-kalima.
+Licensed, like WordCraft, under the MIT License or the Apache License, Version 2.0, at your option
 (LICENSE-MIT, LICENSE-APACHE).
 
-The ArtCraft name, wordmark and logos in docs/brand/ are trademarks of the ArtCraft Team. They are
-not open source and are not covered by the license above; their terms are in
-docs/brand/LICENSE-brand.txt.
+Based on WordCraft
+Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.
+Licensed under the MIT License or the Apache License, Version 2.0, at your option
+(LICENSE-MIT, LICENSE-APACHE). Source: https://github.com/storytold/wordcraft
+
+The ArtCraft and WordCraft names, wordmarks and logos are trademarks of the ArtCraft Team. They are
+not covered by the license above and كلمة does not use them; it names WordCraft only to say what it
+is based on. كلمة is not made or endorsed by the ArtCraft Team.
 
 Third-party material
 
@@ -13,6 +20,8 @@ This product bundles third-party material under its own licenses, listed below. 
 list (author, source, license) is in ATTRIBUTION.md.
 
 - Source Sans 3 and Source Serif 4 (assets/fonts/Source*) — SIL Open Font License 1.1. See assets/fonts/OFL-SourceSans3.txt, OFL-SourceSerif4.txt.
+- Noto Sans Arabic (assets/fonts/NotoSansArabic-*.ttf) — SIL Open Font License 1.1. See assets/fonts/OFL-NotoSansArabic.txt.
+  The كلمة logo's lettering is outlined from Noto Kufi Arabic (SIL Open Font License 1.1); no font file is bundled.
 - Inter (assets/fonts/Inter-*.ttf) — SIL Open Font License 1.1. See assets/fonts/OFL-Inter.txt.
 - JetBrains Mono (assets/fonts/JetBrainsMono-*.ttf) — SIL Open Font License 1.1. See assets/fonts/OFL-JetBrainsMono.txt.
 - Japanese fonts (craft-fonts): builds made with craft-fonts (CRAFT_FONTS_DIR; all official
