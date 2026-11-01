@@ -550,15 +550,26 @@ pub fn font_definitions_language(prefer_hans: bool, prefer_korean: bool, prefer_
     add(&mut fonts, "InterSemiBold", include_bytes!("../../../assets/fonts/Inter-SemiBold.ttf"));
     add(&mut fonts, "SourceSans", include_bytes!("../../../assets/fonts/SourceSans3-Regular.ttf"));
     add(&mut fonts, "Mono", include_bytes!("../../../assets/fonts/JetBrainsMono-Regular.ttf"));
+    // Arabic: Inter has none, and system Arabic faces draw small beside it, so a scaled-up Noto Sans Arabic.
+    for (name, bytes) in [
+        ("Arabic", &include_bytes!("../../../assets/fonts/NotoSansArabic-Regular.ttf")[..]),
+        ("ArabicMedium", &include_bytes!("../../../assets/fonts/NotoSansArabic-Medium.ttf")[..]),
+        ("ArabicSemiBold", &include_bytes!("../../../assets/fonts/NotoSansArabic-SemiBold.ttf")[..]),
+    ] {
+        let mut data = FontData::from_static(bytes);
+        data.tweak.scale = 1.15;
+        fonts.font_data.insert(name.into(), Arc::new(data));
+    }
     if let Some(prop) = fonts.families.get_mut(&FontFamily::Proportional) {
         prop.insert(0, "Inter".into());
+        prop.insert(1, "Arabic".into());
         prop.push("SourceSans".into());
     }
     if let Some(m) = fonts.families.get_mut(&FontFamily::Monospace) {
         m.insert(0, "Mono".into());
     }
-    fonts.families.insert(FontFamily::Name("medium".into()), vec!["InterMedium".into(), "Inter".into(), "SourceSans".into()]);
-    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["InterSemiBold".into(), "Inter".into(), "SourceSans".into()]);
+    fonts.families.insert(FontFamily::Name("medium".into()), vec!["InterMedium".into(), "ArabicMedium".into(), "Inter".into(), "SourceSans".into()]);
+    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["InterSemiBold".into(), "ArabicSemiBold".into(), "Inter".into(), "SourceSans".into()]);
     let add_cjk = |fonts: &mut FontDefinitions, name: String, data: FontData| {
         fonts.font_data.insert(name.clone(), Arc::new(data));
         for fam in [FontFamily::Proportional, FontFamily::Name("medium".into()), FontFamily::Name("semibold".into())] {
@@ -952,8 +963,8 @@ mod tests {
         let defs = super::font_definitions(false, false);
         let prop = &defs.families[&egui::FontFamily::Proportional];
         assert_eq!(
-            prop.iter().take(6).map(String::as_str).collect::<Vec<_>>(),
-            ["Inter", "Ubuntu-Light", "egui-icons", "NotoEmoji-Regular", "emoji-icon-font", "SourceSans"]
+            prop.iter().take(7).map(String::as_str).collect::<Vec<_>>(),
+            ["Inter", "Arabic", "Ubuntu-Light", "egui-icons", "NotoEmoji-Regular", "emoji-icon-font", "SourceSans"]
         );
     }
 

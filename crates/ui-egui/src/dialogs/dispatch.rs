@@ -1075,23 +1075,26 @@ fn about_dialog(ui: &mut Ui, d: &mut Dialog) -> bool {
         return false;
     };
     ui.set_width(660.0);
-    let names = ["About", "Contributors", "Models"].map(|n| tl!(n).to_string());
-    if let Some(i) = crate::widgets::dialog_tabs(ui, &names, *tab as usize) {
-        *tab = i as u8;
+    // كلمة credits WordCraft as a whole, so its contributor list isn't shown (tab 1 opens About).
+    let names = ["About", "Models"].map(|n| tl!(n).to_string());
+    let shown = usize::from(*tab == 2);
+    if let Some(i) = crate::widgets::dialog_tabs(ui, &names, shown) {
+        *tab = if i == 1 { 2 } else { 0 };
     }
     ui.add_space(6.0);
     match *tab {
-        1 => crate::credits::contributors_ui(ui),
         2 => crate::credits::models_ui(ui),
         _ => {
             ui.label(egui::RichText::new(crate::APP_NAME).font(semibold(22.0)));
             let build = option_env!("WORDCRAFT_BUILD_SHA").map(|s| s.get(..8).unwrap_or(s)).unwrap_or(tl!("development build"));
             ui.label(crate::i18n::fmt(tl!("Version {version} ({build})"), &[("version", env!("CARGO_PKG_VERSION")), ("build", build)]));
-            ui.label("معالج نصوص عربي مجاني ومفتوح المصدر.\nمبني على WordCraft من فريق ArtCraft، مع الشكر على عملهم الأصلي.");
+            ui.label("معالج نصوص عربي مجاني ومفتوح المصدر، من تطوير ناصر القحطاني.\nمبني على WordCraft، مع الشكر لفريق ArtCraft ومجتمع WordCraft على عملهم الأصلي.");
             ui.add_space(6.0);
             ui.hyperlink_to("github.com/nasserfq/-kalima", "https://github.com/nasserfq/-kalima");
             ui.hyperlink_to(tl!("Source code: github.com/storytold/wordcraft"), "https://github.com/storytold/wordcraft");
             ui.add_space(6.0);
+            ui.label(egui::RichText::new("كلمة © 2026 ناصر القحطاني.").small().weak());
+            // Kept as is: the MIT and Apache licences require WordCraft's copyright notice.
             ui.label(egui::RichText::new(tl!("MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.")).small().weak());
         }
     }
