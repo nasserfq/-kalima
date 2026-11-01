@@ -97,6 +97,6 @@ jobs:
           body: |
             كلمة: معالج نصوص عربي مبني على WordCraft من فريق ArtCraft.
 
-            - macOS (Apple Silicon and Intel, macOS 11 or later): `Kalima-macos.dmg`. First open: System Settings › Privacy & Security › Open Anyway (the app is not signed by Apple).
+            - macOS (Apple Silicon and Intel, macOS 11 or later): `Kalima-macos.dmg`. Signed and notarized by Apple.
             - Windows: `Kalima-windows-x64.zip`, unzip and run `Kalima.exe`.
             - Linux: `Kalima-linux-x64.tar.gz`, extract and run `kalima`.
