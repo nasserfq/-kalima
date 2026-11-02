@@ -23,6 +23,8 @@ jobs:
           - os: ubuntu-22.04
             name: linux-x64
     runs-on: ${{ matrix.os }}
+    env:
+      KALIMA_BUILD: ${{ github.run_number }}  # the app compares it with the latest release
     steps:
       - uses: actions/checkout@v4
       - name: Interface translations (with Arabic)
