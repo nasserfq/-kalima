@@ -549,6 +549,9 @@ pub fn style_gallery(app: &mut WordApp, ui: &mut Ui, state: &Value) {
             let mut p = Paragraph::with_text(tl!("AaBbCcDd"), CharProps::default()).styled(id);
             p.props.space_before = Some(0.0);
             p.props.align = Some(wordcraft_doc::Align::Left);
+            // A right-to-left default (Arabic documents) would put the sample at the far end of
+            // the snippet, outside the part the tile shows.
+            p.props.bidi = Some(false);
             // Keep hanging indents (bullets) but start the first line at the tile's left edge.
             let first = doc.styles.resolve_para(&p.props).indent_first;
             p.props.indent_left = Some(if first.is_finite() { (-first).max(0.0) } else { 0.0 });
