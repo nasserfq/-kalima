@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كلمة · معالج نصوص عربي مجاني</title>
+<meta name="description" content="كلمة معالج نصوص عربي مجاني ومفتوح المصدر لأجهزة macOS وWindows وLinux: واجهة عربية من اليمين إلى اليسار، وتدقيق إملائي عربي، وملفات Word.">
+<meta property="og:title" content="كلمة · معالج نصوص عربي مجاني">
+<meta property="og:description" content="معالج نصوص عربي مجاني ومفتوح المصدر لأجهزة macOS وWindows وLinux.">
+<meta property="og:image" content="https://mokteb.com/icon.png">
+<meta property="og:url" content="https://mokteb.com/">
+<meta name="theme-color" content="#3b5bdb">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@600;800&family=Noto+Sans+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #3b5bdb;
+    --ink: #2b47b5;
+    --bg: #ffffff;
+    --soft: #f3f5fc;
+    --text: #1f2330;
+    --dim: #5b6070;
+    --line: #e2e5ef;
+    --card: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --blue: #6f8cf0;
+      --ink: #9fb2f6;
+      --bg: #12141b;
+      --soft: #1a1d27;
+      --text: #eceef4;
+      --dim: #a3a8b8;
+      --line: #2a2e3b;
+      --card: #191c25;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans Arabic", "Geeza Pro", "Segoe UI", system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.8;
+  }
+  a { color: var(--ink); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  h1, h2, h3, .brand { font-family: "Noto Kufi Arabic", "Noto Sans Arabic", sans-serif; }
+
+  header.top { padding: 18px 0; }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 22px; color: var(--text); text-decoration: none; }
+  .brand img { width: 36px; height: 36px; }
+  nav a { color: var(--dim); text-decoration: none; margin-inline-start: 20px; font-size: 16px; }
+  nav a:hover { color: var(--ink); }
+
+  .hero { padding: 56px 0 72px; text-align: center; background: linear-gradient(180deg, var(--bg), var(--soft)); }
+  .hero img.logo { width: 128px; height: 128px; filter: drop-shadow(0 10px 24px rgba(59, 91, 219, .25)); }
+  .hero h1 { font-size: clamp(44px, 9vw, 76px); line-height: 1.25; margin: 18px 0 6px; font-weight: 800; }
+  .hero p.lead { font-size: clamp(19px, 3vw, 23px); color: var(--dim); margin: 0 auto 30px; max-width: 640px; }
+  .cta { display: inline-flex; align-items: center; gap: 10px; background: var(--blue); color: #fff; text-decoration: none;
+         font-weight: 600; font-size: 20px; padding: 14px 34px; border-radius: 12px; box-shadow: 0 6px 18px rgba(59, 91, 219, .3); }
+  .cta:hover { background: #2b47b5; }
+  .platforms { margin-top: 16px; color: var(--dim); font-size: 15px; }
+
+  section { padding: 64px 0; }
+  section h2 { font-size: 30px; margin: 0 0 28px; text-align: center; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card h3 { margin: 0 0 6px; font-size: 19px; color: var(--ink); }
+  .card p { margin: 0; color: var(--dim); font-size: 16px; }
+
+  .downloads { background: var(--soft); }
+  .dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .dl .card { display: flex; flex-direction: column; gap: 8px; }
+  .dl .os { font-family: "Noto Kufi Arabic", sans-serif; font-weight: 800; font-size: 22px; }
+  .dl code { direction: ltr; unicode-bidi: isolate; font-size: 14px; background: var(--soft); padding: 2px 6px; border-radius: 6px; }
+  .dl a.btn { margin-top: auto; align-self: flex-start; background: var(--blue); color: #fff; text-decoration: none; padding: 8px 20px; border-radius: 10px; font-weight: 600; font-size: 16px; }
+  .note { text-align: center; color: var(--dim); font-size: 16px; margin-top: 22px; }
+
+  .en { direction: ltr; text-align: left; font-family: Inter, "Segoe UI", system-ui, sans-serif; line-height: 1.6; }
+  .en h2 { text-align: left; }
+  .en p { color: var(--dim); max-width: 760px; }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--dim); font-size: 15px; }
+  footer p { margin: 4px 0; }
+
+  @media (max-width: 560px) {
+    nav { display: none; }
+    section { padding: 48px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/"><img src="icon.png" alt="" width="36" height="36">كلمة</a>
+    <nav>
+      <a href="#features">المزايا</a>
+      <a href="#download">التنزيل</a>
+      <a href="https://github.com/nasserfq/kalima">GitHub</a>
+      <a href="#english" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <img class="logo" src="icon.png" alt="شعار كلمة" width="128" height="128">
+      <h1>كلمة</h1>
+      <p class="lead">معالج نصوص عربي، مجاني ومفتوح المصدر. واجهة عربية من اليمين إلى اليسار، وتدقيق إملائي عربي، وملفات Word.</p>
+      <a class="cta" href="#download">⬇︎ نزّل كلمة مجانًا</a>
+      <div class="platforms">macOS · Windows · Linux</div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>مصمَّم للعربية أولًا</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>واجهة عربية بالكامل</h3>
+          <p>القوائم والأزرار بالعربية ومن اليمين إلى اليسار، مع خيار الإنجليزية.</p>
+        </div>
+        <div class="card">
+          <h3>مستندات من اليمين إلى اليسار</h3>
+          <p>كل مستند جديد يبدأ عربيًا، بخط Noto Sans Arabic بحجم مريح للقراءة.</p>
+        </div>
+        <div class="card">
+          <h3>تدقيق إملائي عربي</h3>
+          <p>يستعمل مدقق النظام في macOS وWindows، فيلوّن الأخطاء ويقترح التصحيح.</p>
+        </div>
+        <div class="card">
+          <h3>ملفات Word</h3>
+          <p>افتح ملفات Word ‏(<bdi dir="ltr">.docx</bdi>) واحفظها، وصدّر إلى PDF.</p>
+        </div>
+        <div class="card">
+          <h3>تحديث تلقائي</h3>
+          <p>عند صدور إصدار جديد يعرض كلمة «تحديث وإعادة تشغيل»، وتبقى إعداداتك كما هي.</p>
+        </div>
+        <div class="card">
+          <h3>مجاني ومفتوح المصدر</h3>
+          <p>بلا اشتراك ولا إعلانات، والشيفرة متاحة للجميع على GitHub.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" class="downloads">
+    <div class="wrap">
+      <h2>التنزيل</h2>
+      <div class="dl">
+        <div class="card">
+          <div class="os">macOS</div>
+          <p>لأجهزة Apple Silicon وIntel، الإصدار 11 فأحدث. افتح ملف <code>.dmg</code> واسحب كلمة إلى «التطبيقات». موقّع وموثَّق من Apple.</p>
+          <a class="btn" href="https://github.com/nasserfq/kalima/releases/latest">تنزيل لـ macOS</a>
+        </div>
+        <div class="card">
+          <div class="os">Windows</div>
+          <p>فك ضغط ملف <code>windows-x64-portable.zip</code> وشغّل <code>Kalima.exe</code>.</p>
+          <a class="btn" href="https://github.com/nasserfq/kalima/releases/latest">تنزيل لـ Windows</a>
+        </div>
+        <div class="card">
+          <div class="os">Linux</div>
+          <p>فك ضغط ملف <code>linux-x86_64.tar.gz</code> وشغّل <code>kalima</code>.</p>
+          <a class="btn" href="https://github.com/nasserfq/kalima/releases/latest">تنزيل لـ Linux</a>
+        </div>
+      </div>
+      <p class="note">تجد كل الملفات في <a href="https://github.com/nasserfq/kalima/releases/latest">صفحة آخر إصدار</a>.</p>
+    </div>
+  </section>
+
+  <section id="english" class="en" lang="en" dir="ltr">
+    <div class="wrap">
+      <h2>Kalima, an Arabic word processor</h2>
+      <p>Kalima (كلمة) is a free, open-source, Arabic-first word processor for macOS, Windows and Linux by Nasser Alqahtani. It has an Arabic, right-to-left interface (English is available), right-to-left Arabic documents by default, Arabic spell checking through the macOS and Windows system spell checkers, and opens and saves Word <code>.docx</code> files.</p>
+      <p><a href="https://github.com/nasserfq/kalima/releases/latest">Download the latest release</a> · <a href="https://github.com/nasserfq/kalima">Source on GitHub</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>كلمة من ناصر القحطاني، مبني على <a href="https://github.com/storytold/wordcraft">WordCraft</a> مع الشكر لفريق ArtCraft على عملهم الأصلي. كلمة مشروع مستقل، وليس من إنتاج فريق ArtCraft ولا برعايته.</p>
+    <p>رخصة MIT أو Apache-2.0 · <a href="https://github.com/nasserfq/kalima">GitHub</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
