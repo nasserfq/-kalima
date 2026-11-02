@@ -27,8 +27,9 @@ struct Window {
     last_keep: Option<Rect>,
     /// Windows registered this frame with [`overlay`].
     overlays: Vec<LayerId>,
-    /// Where last frame's overlays, their menus and tooltips were drawn (for input).
-    last_overlays: Vec<Rect>,
+    /// Where last frame's floating layers were drawn, topmost first, and whether each was
+    /// mirrored (else moved with the document area), for input.
+    last_layers: Vec<(Rect, bool)>,
 }
 
 thread_local! {
@@ -65,9 +66,11 @@ fn keep_dx(s: f32, keep: Rect) -> f32 {
 }
 
 /// A point as the user sees it, back to where the layout put it.
-fn to_layout(p: Pos2, s: f32, keep: Option<Rect>, overlays: &[Rect]) -> Pos2 {
-    if overlays.iter().any(|r| r.contains(p)) {
-        return pos2(s - p.x, p.y);
+fn to_layout(p: Pos2, s: f32, keep: Option<Rect>, layers: &[(Rect, bool)]) -> Pos2 {
+    match (layers.iter().find(|(r, _)| r.contains(p)), keep) {
+        (Some((_, true)), _) => return pos2(s - p.x, p.y),
+        (Some((_, false)), Some(k)) => return pos2(p.x - keep_dx(s, k), p.y),
+        _ => {}
     }
     match keep {
         Some(k) if mirror_rect(s, k).contains(p) => pos2(p.x - keep_dx(s, k), p.y),
@@ -88,19 +91,19 @@ pub fn input(raw: &mut egui::RawInput) {
     if !active() {
         return;
     }
-    let (s, keep, overlays) = with(raw.viewport_id, |w| {
+    let (s, keep, layers) = with(raw.viewport_id, |w| {
         if let Some(r) = raw.screen_rect {
             w.span = r.min.x + r.max.x;
         }
-        (w.span, w.last_keep, w.last_overlays.clone())
+        (w.span, w.last_keep, w.last_layers.clone())
     });
     if s <= 0.0 {
         return;
     }
     for e in &mut raw.events {
         match e {
-            Event::PointerMoved(p) => *p = to_layout(*p, s, keep, &overlays),
-            Event::PointerButton { pos, .. } | Event::Touch { pos, .. } => *pos = to_layout(*pos, s, keep, &overlays),
+            Event::PointerMoved(p) => *p = to_layout(*p, s, keep, &layers),
+            Event::PointerButton { pos, .. } | Event::Touch { pos, .. } => *pos = to_layout(*pos, s, keep, &layers),
             Event::MouseMoved(d) => d.x = -d.x,
             _ => {}
         }
@@ -116,7 +119,7 @@ pub fn output(ctx: &egui::Context) {
     let (keep, overlays) = with(ctx.viewport_id(), |w| {
         let keep = w.keep.take();
         w.last_keep = keep;
-        w.last_overlays.clear();
+        w.last_layers.clear();
         if s > 0.0 {
             w.span = s;
         }
@@ -129,24 +132,28 @@ pub fn output(ctx: &egui::Context) {
     if !ids.contains(&LayerId::background()) {
         ids.push(LayerId::background());
     }
-    // The overlays, and the menus and tooltips on them (a combo box's list may hang past the
-    // dialog's edge, so it only has to touch it): mirrored whole, whatever is under them.
+    // Each floating layer (menu, tooltip, dialog) is drawn whole one way, never split by what
+    // lies under it: mirrored, or moved with the document area when it opened from the page.
     let rect = |id: LayerId| ctx.memory(|m| m.area_rect(id.id));
-    let dialogs: Vec<Rect> = overlays.iter().filter_map(|&id| rect(id)).collect();
-    let whole: Vec<(LayerId, Rect)> = ids
-        .iter()
-        .filter_map(|&id| Some((id, rect(id)?)))
-        .filter(|&(id, r)| {
-            overlays.contains(&id) || (matches!(id.order, Order::Foreground | Order::Tooltip) && dialogs.iter().any(|d| d.expand(8.0).intersects(r)))
-        })
-        .collect();
-    with(ctx.viewport_id(), |w| w.last_overlays = whole.iter().map(|&(_, r)| mirror_rect(s, r)).collect());
+    let floating: Vec<(LayerId, Rect)> = ids.iter().filter(|id| id.order != Order::Background).filter_map(|&id| Some((id, rect(id)?))).collect();
+    let modes = layer_modes(&floating, &overlays, keep);
+    with(ctx.viewport_id(), |w| {
+        w.last_layers = floating.iter().zip(&modes).rev().map(|(&(_, r), &whole)| (to_screen_as(r, s, keep, whole), whole)).collect();
+    });
     ctx.graphics_mut(|g| {
         for id in ids {
-            let keep = if whole.iter().any(|&(w, _)| w == id) { None } else { keep };
+            let mode = floating.iter().position(|&(f, _)| f == id).map(|i| modes[i]);
             if let Some(list) = g.get_mut(id) {
                 for i in 0..list.next_idx().0 {
-                    list.mutate_shape(ShapeIdx(i), |c| clipped(c, s, keep));
+                    list.mutate_shape(ShapeIdx(i), |c| match (mode, keep) {
+                        (Some(false), Some(k)) => {
+                            let d = vec2(keep_dx(s, k), 0.0);
+                            c.clip_rect = c.clip_rect.translate(d);
+                            c.shape.translate(d);
+                        }
+                        (Some(_), _) => clipped(c, s, None),
+                        (None, _) => clipped(c, s, keep),
+                    });
                 }
             }
         }
@@ -154,11 +161,36 @@ pub fn output(ctx: &egui::Context) {
     ctx.output_mut(|o| {
         if let Some(ime) = &mut o.ime {
             // A text field in a dialog is mirrored with its dialog.
-            let keep = if whole.iter().any(|&(_, r)| r.contains_rect(ime.rect)) { None } else { keep };
+            let keep = match floating.iter().zip(&modes).rev().find(|((_, r), _)| r.contains_rect(ime.rect)) {
+                Some((_, true)) => None,
+                _ => keep,
+            };
             ime.rect = to_screen(ime.rect, s, keep);
             ime.cursor_rect = to_screen(ime.cursor_rect, s, keep);
         }
     });
+}
+
+/// For each floating layer, bottom to top: mirrored whole (`true`), or moved with the document
+/// area (`false`). Registered overlays are mirrored. Any other layer goes with what is just above
+/// its top edge, where it was opened from: a ribbon button or a mirrored menu (mirrored), or the
+/// page (moved), so a context menu stays at the click and a ribbon list under its button.
+fn layer_modes(floating: &[(LayerId, Rect)], overlays: &[LayerId], keep: Option<Rect>) -> Vec<bool> {
+    let mut modes: Vec<bool> = Vec::with_capacity(floating.len());
+    for &(id, r) in floating {
+        let probe = pos2(r.center().x, r.min.y - 6.0);
+        let under = floating[..modes.len()].iter().zip(&modes).rev().find(|((_, u), _)| u.contains(probe)).map(|(_, &m)| m);
+        let whole = overlays.contains(&id) || under.unwrap_or_else(|| !keep.is_some_and(|k| k.contains(probe)));
+        modes.push(whole);
+    }
+    modes
+}
+
+fn to_screen_as(r: Rect, s: f32, keep: Option<Rect>, whole: bool) -> Rect {
+    match keep {
+        Some(k) if !whole => r.translate(vec2(keep_dx(s, k), 0.0)),
+        _ => mirror_rect(s, r),
+    }
 }
 
 fn clipped(c: &mut ClippedShape, s: f32, keep: Option<Rect>) {
@@ -242,8 +274,26 @@ mod tests {
         let drawn = to_screen(r, s, keep);
         assert_eq!(to_layout(drawn.center(), s, keep, &[]), r.center());
         // Over a dialog drawn above the document area: mirrored like the rest of the interface.
-        let dialog = [Rect::from_min_max(pos2(120.0, 90.0), pos2(400.0, 300.0))];
+        let dialog = [(Rect::from_min_max(pos2(120.0, 90.0), pos2(400.0, 300.0)), true)];
         assert_eq!(to_layout(pos2(150.0, 100.0), s, keep, &dialog), pos2(850.0, 100.0));
+    }
+
+    #[test]
+    fn floating_layers_follow_where_they_opened() {
+        let keep = Some(Rect::from_min_max(pos2(0.0, 100.0), pos2(1000.0, 800.0)));
+        let l = |n: &str, o, r: [f32; 4]| (LayerId::new(o, egui::Id::new(n)), Rect::from_min_max(pos2(r[0], r[1]), pos2(r[2], r[3])));
+        let dialog = l("dialog", Order::Middle, [300.0, 200.0, 700.0, 500.0]);
+        let floating = [
+            dialog,
+            // Font size list under a ribbon button, hanging over the page.
+            l("size", Order::Tooltip, [500.0, 102.0, 560.0, 400.0]),
+            // Its list in a dialog, and a submenu of that list.
+            l("style", Order::Foreground, [400.0, 300.0, 520.0, 600.0]),
+            l("sub", Order::Foreground, [520.0, 320.0, 600.0, 400.0]),
+            // A context menu opened on the page.
+            l("context", Order::Foreground, [100.0, 600.0, 250.0, 750.0]),
+        ];
+        assert_eq!(layer_modes(&floating, &[dialog.0], keep), [true, true, true, true, false]);
     }
 
     #[test]
