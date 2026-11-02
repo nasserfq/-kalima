@@ -4,22 +4,34 @@
 //! flipped. The document area (rulers and pages, [`keep`]) is moved as a block instead of being
 //! mirrored, because the page is already laid out right to left by the document itself.
 //!
-//! shortcut: only the main window is mirrored (documents opened in further native windows are
-//! not), and accessibility bounds stay unmirrored; per-widget layout would fix both.
+//! Every window is mirrored, each with its own state: documents opened in further native windows
+//! are egui viewports of their own. shortcut: accessibility bounds stay unmirrored; per-widget
+//! layout would fix that.
 
-use std::cell::Cell;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use egui::epaint::ClippedShape;
 use egui::layers::ShapeIdx;
-use egui::{CornerRadius, Event, LayerId, Pos2, Rect, Shape, TextureId, pos2, vec2};
+use egui::{CornerRadius, Event, LayerId, Pos2, Rect, Shape, TextureId, ViewportId, pos2, vec2};
+
+/// One window's mirroring.
+#[derive(Clone, Copy, Default)]
+struct Window {
+    /// `min.x + max.x` of the window: x mirrors to `span − x`.
+    span: f32,
+    /// The document area drawn this frame, and the one drawn last frame (for input).
+    keep: Option<Rect>,
+    last_keep: Option<Rect>,
+}
 
 thread_local! {
-    // `min.x + max.x` of the screen: x mirrors to SPAN − x.
-    static SPAN: Cell<f32> = const { Cell::new(0.0) };
-    // The document area drawn this frame, and the one drawn last frame (for input).
-    static KEEP: Cell<Option<Rect>> = const { Cell::new(None) };
-    static LAST_KEEP: Cell<Option<Rect>> = const { Cell::new(None) };
+    static WINDOWS: RefCell<HashMap<ViewportId, Window>> = RefCell::new(HashMap::new());
+}
+
+fn with<R>(id: ViewportId, f: impl FnOnce(&mut Window) -> R) -> R {
+    WINDOWS.with_borrow_mut(|w| f(w.entry(id).or_default()))
 }
 
 /// Is the interface mirrored? Whenever the interface is Arabic (outside tests).
@@ -27,9 +39,9 @@ pub fn active() -> bool {
     !cfg!(test) && crate::i18n::current().code() == crate::i18n::ONLY_LANGUAGE
 }
 
-/// The document area this frame (rulers and pages): moved, not mirrored.
-pub fn keep(rect: Rect) {
-    KEEP.set(Some(rect));
+/// The document area of `ctx`'s window this frame (rulers and pages): moved, not mirrored.
+pub fn keep(ctx: &egui::Context, rect: Rect) {
+    with(ctx.viewport_id(), |w| w.keep = Some(rect));
 }
 
 fn mirror_rect(s: f32, r: Rect) -> Rect {
@@ -57,19 +69,20 @@ fn to_screen(r: Rect, s: f32, keep: Option<Rect>) -> Rect {
     }
 }
 
-/// Mirror this frame's pointer input (call from `raw_input_hook`, before egui reads it).
+/// Mirror a window's pointer input for this frame (call from an input hook, before egui reads it).
 pub fn input(raw: &mut egui::RawInput) {
     if !active() {
         return;
     }
-    if let Some(r) = raw.screen_rect {
-        SPAN.set(r.min.x + r.max.x);
-    }
-    let s = SPAN.get();
+    let (s, keep) = with(raw.viewport_id, |w| {
+        if let Some(r) = raw.screen_rect {
+            w.span = r.min.x + r.max.x;
+        }
+        (w.span, w.last_keep)
+    });
     if s <= 0.0 {
         return;
     }
-    let keep = LAST_KEEP.get();
     for e in &mut raw.events {
         match e {
             Event::PointerMoved(p) => *p = to_layout(*p, s, keep),
@@ -80,21 +93,23 @@ pub fn input(raw: &mut egui::RawInput) {
     }
 }
 
-/// Mirror everything painted this frame (call after the app's `ui`).
+/// Mirror everything painted in `ctx`'s window this frame (call after the window's `ui`).
 pub fn output(ctx: &egui::Context) {
-    let keep = KEEP.take();
-    LAST_KEEP.set(keep);
-    if !active() {
-        return;
-    }
     let s = ctx.input(|i| {
         let r = i.viewport_rect();
         r.min.x + r.max.x
     });
-    if s <= 0.0 {
+    let keep = with(ctx.viewport_id(), |w| {
+        let keep = w.keep.take();
+        w.last_keep = keep;
+        if s > 0.0 {
+            w.span = s;
+        }
+        keep
+    });
+    if !active() || s <= 0.0 {
         return;
     }
-    SPAN.set(s);
     let mut ids: Vec<LayerId> = ctx.memory(|m| m.layer_ids().collect());
     if !ids.contains(&LayerId::background()) {
         ids.push(LayerId::background());

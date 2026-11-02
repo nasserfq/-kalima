@@ -515,7 +515,7 @@ fn prepare_view(app: &mut WordApp, ui: &Ui, full: Rect, layout: &DocLayout) -> C
         area
     };
     app.canvas.canvas_rect = Some(area);
-    crate::mirror::keep(full);
+    crate::mirror::keep(ui.ctx(), full);
     let animate = app.animations_on();
     let opts = ui.ctx().options(|o| o.input_options);
     let zoom_delta = ui.input(|i| app.canvas.wheel.zoom(i, &opts, animate));

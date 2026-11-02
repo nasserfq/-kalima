@@ -249,6 +249,8 @@ impl egui::Plugin for ViewportInput {
         if viewport == ViewportId::ROOT {
             return;
         }
+        // The root's input is mirrored in the app's raw-input hook; a further window's here.
+        crate::mirror::input(input);
         if cfg!(target_os = "macos") {
             crate::control_click_as_secondary(&mut input.events, self.control_click.entry(viewport).or_default());
         }
@@ -599,7 +601,13 @@ impl WordApp {
                 Some(t) => base.clone().with_title(t.clone()),
                 None => base.clone().with_title(crate::APP_NAME),
             },
-            |ui, _, key| self.draw_window(ui, *key),
+            |ui, _, key| {
+                self.draw_window(ui, *key);
+                // The root window is mirrored once its whole frame is drawn (the app's `ui`).
+                if ui.ctx().viewport_id() != ViewportId::ROOT {
+                    crate::mirror::output(ui.ctx());
+                }
+            },
         );
         self.windows.showing = false;
         self.windows.list = list;
