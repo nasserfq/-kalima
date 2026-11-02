@@ -318,6 +318,9 @@ pub(crate) fn show(app: &mut WordApp, ctx: &egui::Context) {
         ui.set_width(620.0);
         done = body(ui, &mut b, &t);
     });
+    if let Some(s) = &shown {
+        crate::mirror::overlay(ctx, s.response.layer_id);
+    }
     if shown.is_some_and(|s| crate::window_close::show(ctx, &s.response, &t)) {
         done = Some(None);
     }

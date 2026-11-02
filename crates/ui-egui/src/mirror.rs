@@ -5,7 +5,8 @@
 //! mirrored, because the page is already laid out right to left by the document itself.
 //!
 //! Every window is mirrored, each with its own state: documents opened in further native windows
-//! are egui viewports of their own. shortcut: accessibility bounds stay unmirrored; per-widget
+//! are egui viewports of their own. Dialogs and other windows ([`overlay`]), with the menus and
+//! tooltips that open on them, are always mirrored as a whole, even over the document area. shortcut: accessibility bounds stay unmirrored; per-widget
 //! layout would fix that.
 
 use std::cell::RefCell;
@@ -14,16 +15,20 @@ use std::sync::Arc;
 
 use egui::epaint::ClippedShape;
 use egui::layers::ShapeIdx;
-use egui::{CornerRadius, Event, LayerId, Pos2, Rect, Shape, TextureId, ViewportId, pos2, vec2};
+use egui::{CornerRadius, Event, LayerId, Order, Pos2, Rect, Shape, TextureId, ViewportId, pos2, vec2};
 
 /// One window's mirroring.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Default)]
 struct Window {
     /// `min.x + max.x` of the window: x mirrors to `span − x`.
     span: f32,
     /// The document area drawn this frame, and the one drawn last frame (for input).
     keep: Option<Rect>,
     last_keep: Option<Rect>,
+    /// Windows registered this frame with [`overlay`].
+    overlays: Vec<LayerId>,
+    /// Where last frame's overlays, their menus and tooltips were drawn (for input).
+    last_overlays: Vec<Rect>,
 }
 
 thread_local! {
@@ -44,6 +49,12 @@ pub fn keep(ctx: &egui::Context, rect: Rect) {
     with(ctx.viewport_id(), |w| w.keep = Some(rect));
 }
 
+/// A dialog or other window shown this frame in `ctx`'s window: mirrored as a whole, with any
+/// menu or tooltip that touches it, never moved with the document area under it.
+pub fn overlay(ctx: &egui::Context, layer: LayerId) {
+    with(ctx.viewport_id(), |w| w.overlays.push(layer));
+}
+
 fn mirror_rect(s: f32, r: Rect) -> Rect {
     Rect::from_min_max(pos2(s - r.max.x, r.min.y), pos2(s - r.min.x, r.max.y))
 }
@@ -54,7 +65,10 @@ fn keep_dx(s: f32, keep: Rect) -> f32 {
 }
 
 /// A point as the user sees it, back to where the layout put it.
-fn to_layout(p: Pos2, s: f32, keep: Option<Rect>) -> Pos2 {
+fn to_layout(p: Pos2, s: f32, keep: Option<Rect>, overlays: &[Rect]) -> Pos2 {
+    if overlays.iter().any(|r| r.contains(p)) {
+        return pos2(s - p.x, p.y);
+    }
     match keep {
         Some(k) if mirror_rect(s, k).contains(p) => pos2(p.x - keep_dx(s, k), p.y),
         _ => pos2(s - p.x, p.y),
@@ -74,19 +88,19 @@ pub fn input(raw: &mut egui::RawInput) {
     if !active() {
         return;
     }
-    let (s, keep) = with(raw.viewport_id, |w| {
+    let (s, keep, overlays) = with(raw.viewport_id, |w| {
         if let Some(r) = raw.screen_rect {
             w.span = r.min.x + r.max.x;
         }
-        (w.span, w.last_keep)
+        (w.span, w.last_keep, w.last_overlays.clone())
     });
     if s <= 0.0 {
         return;
     }
     for e in &mut raw.events {
         match e {
-            Event::PointerMoved(p) => *p = to_layout(*p, s, keep),
-            Event::PointerButton { pos, .. } | Event::Touch { pos, .. } => *pos = to_layout(*pos, s, keep),
+            Event::PointerMoved(p) => *p = to_layout(*p, s, keep, &overlays),
+            Event::PointerButton { pos, .. } | Event::Touch { pos, .. } => *pos = to_layout(*pos, s, keep, &overlays),
             Event::MouseMoved(d) => d.x = -d.x,
             _ => {}
         }
@@ -99,13 +113,14 @@ pub fn output(ctx: &egui::Context) {
         let r = i.viewport_rect();
         r.min.x + r.max.x
     });
-    let keep = with(ctx.viewport_id(), |w| {
+    let (keep, overlays) = with(ctx.viewport_id(), |w| {
         let keep = w.keep.take();
         w.last_keep = keep;
+        w.last_overlays.clear();
         if s > 0.0 {
             w.span = s;
         }
-        keep
+        (keep, std::mem::take(&mut w.overlays))
     });
     if !active() || s <= 0.0 {
         return;
@@ -114,8 +129,21 @@ pub fn output(ctx: &egui::Context) {
     if !ids.contains(&LayerId::background()) {
         ids.push(LayerId::background());
     }
+    // The overlays, and the menus and tooltips on them (a combo box's list may hang past the
+    // dialog's edge, so it only has to touch it): mirrored whole, whatever is under them.
+    let rect = |id: LayerId| ctx.memory(|m| m.area_rect(id.id));
+    let dialogs: Vec<Rect> = overlays.iter().filter_map(|&id| rect(id)).collect();
+    let whole: Vec<(LayerId, Rect)> = ids
+        .iter()
+        .filter_map(|&id| Some((id, rect(id)?)))
+        .filter(|&(id, r)| {
+            overlays.contains(&id) || (matches!(id.order, Order::Foreground | Order::Tooltip) && dialogs.iter().any(|d| d.expand(8.0).intersects(r)))
+        })
+        .collect();
+    with(ctx.viewport_id(), |w| w.last_overlays = whole.iter().map(|&(_, r)| mirror_rect(s, r)).collect());
     ctx.graphics_mut(|g| {
         for id in ids {
+            let keep = if whole.iter().any(|&(w, _)| w == id) { None } else { keep };
             if let Some(list) = g.get_mut(id) {
                 for i in 0..list.next_idx().0 {
                     list.mutate_shape(ShapeIdx(i), |c| clipped(c, s, keep));
@@ -125,6 +153,8 @@ pub fn output(ctx: &egui::Context) {
     });
     ctx.output_mut(|o| {
         if let Some(ime) = &mut o.ime {
+            // A text field in a dialog is mirrored with its dialog.
+            let keep = if whole.iter().any(|&(_, r)| r.contains_rect(ime.rect)) { None } else { keep };
             ime.rect = to_screen(ime.rect, s, keep);
             ime.cursor_rect = to_screen(ime.cursor_rect, s, keep);
         }
@@ -205,12 +235,15 @@ mod tests {
         let s = 1000.0;
         let keep = Some(Rect::from_min_max(pos2(200.0, 50.0), pos2(900.0, 800.0)));
         // Outside the document area: mirrored.
-        assert_eq!(to_layout(pos2(10.0, 5.0), s, keep), pos2(990.0, 5.0));
+        assert_eq!(to_layout(pos2(10.0, 5.0), s, keep, &[]), pos2(990.0, 5.0));
         // The area is drawn at 100..800: a point there maps back by the same shift.
-        assert_eq!(to_layout(pos2(150.0, 100.0), s, keep), pos2(250.0, 100.0));
+        assert_eq!(to_layout(pos2(150.0, 100.0), s, keep, &[]), pos2(250.0, 100.0));
         let r = Rect::from_min_max(pos2(300.0, 60.0), pos2(310.0, 70.0));
         let drawn = to_screen(r, s, keep);
-        assert_eq!(to_layout(drawn.center(), s, keep), r.center());
+        assert_eq!(to_layout(drawn.center(), s, keep, &[]), r.center());
+        // Over a dialog drawn above the document area: mirrored like the rest of the interface.
+        let dialog = [Rect::from_min_max(pos2(120.0, 90.0), pos2(400.0, 300.0))];
+        assert_eq!(to_layout(pos2(150.0, 100.0), s, keep, &dialog), pos2(850.0, 100.0));
     }
 
     #[test]

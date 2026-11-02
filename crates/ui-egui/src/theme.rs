@@ -569,7 +569,9 @@ pub fn font_definitions_language(prefer_hans: bool, prefer_korean: bool, prefer_
         m.insert(0, "Mono".into());
     }
     fonts.families.insert(FontFamily::Name("medium".into()), vec!["InterMedium".into(), "ArabicMedium".into(), "Inter".into(), "SourceSans".into()]);
-    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["InterSemiBold".into(), "ArabicSemiBold".into(), "Inter".into(), "SourceSans".into()]);
+    fonts
+        .families
+        .insert(FontFamily::Name("semibold".into()), vec!["InterSemiBold".into(), "ArabicSemiBold".into(), "Inter".into(), "SourceSans".into()]);
     let add_cjk = |fonts: &mut FontDefinitions, name: String, data: FontData| {
         fonts.font_data.insert(name.clone(), Arc::new(data));
         for fam in [FontFamily::Proportional, FontFamily::Name("medium".into()), FontFamily::Name("semibold".into())] {

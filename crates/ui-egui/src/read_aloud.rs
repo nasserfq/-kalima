@@ -147,6 +147,9 @@ pub fn show(app: &mut WordApp, ctx: &egui::Context) {
             ui.label(egui::RichText::new(e.as_str()).color(t.red).small());
         }
     });
+    if let Some(s) = &shown {
+        crate::mirror::overlay(ctx, s.response.layer_id);
+    }
     if shown.is_some_and(|s| crate::window_close::show(ctx, &s.response, &t)) {
         run = Some(("readAloud.stop", json!({})));
     }
