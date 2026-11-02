@@ -17,6 +17,11 @@ use crate::Registry;
 /// isn't part of the customizable list.
 pub const TABS: [&str; 13] =
     ["File", "Home", "Insert", "Draw", "Design", "Layout", "References", "Mailings", "Review", "View", "Developer", "Zotero", "Help"];
+/// كلمة hides the Zotero tab until the user shows it (File › Options › Customize Ribbon).
+fn hidden_by_default(tab: &str) -> bool {
+    tab == "Zotero"
+}
+
 /// Tabs that come up with the selection; custom tabs can't take their names.
 pub const CONTEXTUAL_TABS: [&str; 7] =
     ["Table Design", "Table Layout", "Picture Format", "Shape Format", "Equation", "Chart Design", "SmartArt Design"];
@@ -87,7 +92,7 @@ fn reserved(name: &str) -> bool {
 }
 
 fn default_tabs() -> Vec<TabEntry> {
-    TABS.iter().skip(1).map(|t| TabEntry { name: (*t).to_string(), custom: false, hidden: false, groups: Vec::new() }).collect()
+    TABS.iter().skip(1).map(|t| TabEntry { name: (*t).to_string(), custom: false, hidden: hidden_by_default(t), groups: Vec::new() }).collect()
 }
 
 /// `base`, or `base 2`, `base 3`… whichever `taken` doesn't have yet.
@@ -168,7 +173,7 @@ impl RibbonLayout {
                 continue;
             }
             let at = TABS.get(1..i).and_then(|before| before.iter().rev().find_map(|b| tabs.iter().position(|t| !t.custom && t.name == *b)));
-            let entry = TabEntry { name: (*name).to_string(), custom: false, hidden: false, groups: Vec::new() };
+            let entry = TabEntry { name: (*name).to_string(), custom: false, hidden: hidden_by_default(name), groups: Vec::new() };
             tabs.insert(at.map_or(0, |p| p + 1), entry);
         }
         self.tabs = if tabs == default_tabs() { Vec::new() } else { tabs };
