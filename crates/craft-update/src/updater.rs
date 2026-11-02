@@ -61,6 +61,8 @@ pub struct Updater {
     restart: bool,
     /// An update is installed and waits for the app to exit; nothing starts a second one.
     installed: bool,
+    /// What the running installation is doing, as its worker last said (shown in the prompt).
+    phase: Arc<std::sync::Mutex<Option<crate::JobPhase>>>,
     /// The version-choice file to read in place of [`Pins::default_path`] (tests).
     pins_path: Option<PathBuf>,
     /// The launcher's choice for this app when it is not stable, as of the last check or offer.
@@ -83,6 +85,7 @@ impl Updater {
             prompt: None,
             restart: false,
             installed: false,
+            phase: Default::default(),
             pins_path: None,
             managed: None,
         }
@@ -183,7 +186,7 @@ impl Updater {
         let spawned = std::thread::Builder::new().name("update-check".into()).spawn(move || {
             let ask = || match source {
                 Some(ask) => ask(),
-                None => Http::new(&format!("{}/Update", app.name)).and_then(|http| check_for_update(app, &http, &version)),
+                None => Http::new(&user_agent(app)).and_then(|http| check_for_update(app, &http, &version)),
             };
             let answer =
                 std::panic::catch_unwind(std::panic::AssertUnwindSafe(ask)).unwrap_or_else(|_| Err("the update check failed unexpectedly".into()));
@@ -225,6 +228,11 @@ impl Updater {
     /// Picks up a finished check or installation. Call once per frame, before [`Self::show`]. It
     /// keeps the UI awake while either is running.
     pub fn tick(&mut self, ctx: &egui::Context) {
+        if let Some(prompt) = &mut self.prompt
+            && prompt.is_installing
+        {
+            prompt.phase = self.phase.lock().ok().and_then(|p| *p);
+        }
         if let Some(rx) = &self.check {
             match rx.try_recv() {
                 Ok(answer) => {
@@ -256,7 +264,7 @@ impl Updater {
                         if let Some(prompt) = &mut self.prompt {
                             prompt.is_installing = false;
                             prompt.status_message =
-                                Some(format!("The update is installed. Close {} to finish; it restarts by itself.", self.app.name));
+                                Some(format!("تم تثبيت التحديث. أغلق {} لإكماله، وسيُعاد تشغيله تلقائيًا.", self.app.name));
                         }
                     }
                     Err(e) => {
@@ -316,7 +324,7 @@ impl Updater {
         if can_start {
             self.start_install(ctx);
         } else if let Some(prompt) = &mut self.prompt {
-            prompt.status_message = Some("Save or close your open work first; the update restarts the app.".into());
+            prompt.status_message = Some("احفظ عملك المفتوح أو أغلقه أولًا، فالتحديث يعيد تشغيل التطبيق.".into());
         }
     }
 
@@ -327,11 +335,11 @@ impl Updater {
         }
         let Some(prompt) = &mut self.prompt else { return };
         if self.installed {
-            prompt.status_message = Some(format!("The update is installed. Close {} to finish; it restarts by itself.", self.app.name));
+            prompt.status_message = Some(format!("تم تثبيت التحديث. أغلق {} لإكماله، وسيُعاد تشغيله تلقائيًا.", self.app.name));
             return;
         }
         let Some(installed) = self_update::current(self.app) else {
-            prompt.status_message = Some("Cannot auto-update this installation type. Please download manually.".into());
+            prompt.status_message = Some("لا يمكن تحديث هذه النسخة تلقائيًا. نزّل الإصدار الجديد يدويًا.".into());
             prompt.is_installing = false;
             return;
         };
@@ -340,8 +348,19 @@ impl Updater {
         let (tx, rx) = channel();
         let (app, version, ctx, release) = (self.app, self.version.clone(), ctx.clone(), prompt.release.clone());
         let worker_release = release.clone();
+        let phase = self.phase.clone();
+        if let Ok(mut p) = phase.lock() {
+            *p = None;
+        }
         let spawned = std::thread::Builder::new().name("self-update".into()).spawn(move || {
-            let run = || install(app, &installed, worker_release, &version);
+            let repaint = ctx.clone();
+            let mut report = |p: crate::JobPhase| {
+                if let Ok(mut slot) = phase.lock() {
+                    *slot = Some(p);
+                }
+                repaint.request_repaint();
+            };
+            let run = || install(app, &installed, worker_release, &version, &mut report);
             let outcome =
                 std::panic::catch_unwind(std::panic::AssertUnwindSafe(run)).unwrap_or_else(|_| Err("the update failed unexpectedly".into()));
             let _ = tx.send(outcome);
@@ -357,8 +376,14 @@ impl Updater {
     }
 }
 
-fn install(app: &'static App, installed: &self_update::Install, mut release: Release, version: &str) -> Result<(), String> {
-    let http = Http::new(&format!("{}/Update", app.name)).map_err(|e| format!("could not initialize HTTP: {e}"))?;
+fn install(
+    app: &'static App,
+    installed: &self_update::Install,
+    mut release: Release,
+    version: &str,
+    phase: &mut dyn FnMut(crate::JobPhase),
+) -> Result<(), String> {
+    let http = Http::new(&user_agent(app)).map_err(|e| format!("could not initialize HTTP: {e}"))?;
     if release.assets.is_empty()
         && let Some(full) = check_for_update(app, &http, version).map_err(|e| format!("could not fetch release assets: {e}"))?
     {
@@ -366,7 +391,7 @@ fn install(app: &'static App, installed: &self_update::Install, mut release: Rel
     }
     let paths = Paths::for_app(app).map_err(|e| format!("could not find paths: {e}"))?;
     let platform = Platform::current().ok_or("unsupported platform for self update")?;
-    self_update::update(app, installed, &release, platform, &http, &paths, &Stop::default(), &mut |_| {}, &|| Ok(()), Some(version))
+    self_update::update(app, installed, &release, platform, &http, &paths, &Stop::default(), phase, &|| Ok(()), Some(version))
 }
 
 #[cfg(test)]
@@ -604,3 +629,9 @@ mod tests {
 #[cfg(test)]
 #[path = "updater_pin_tests.rs"]
 mod pin_tests;
+
+/// The update requests' User-Agent: `<id>/Update`. Not the display name: a header value must be
+/// ASCII, and كلمة's name isn't, which failed every check before a request was sent.
+fn user_agent(app: &App) -> String {
+    format!("{}/Update", app.id)
+}

@@ -29,13 +29,15 @@ pub struct StartupPrompt {
     pub open: bool,
     pub status_message: Option<String>,
     pub is_installing: bool,
+    /// What the running update is doing, for the progress line (كلمة).
+    pub phase: Option<crate::JobPhase>,
 }
 
 impl StartupPrompt {
     /// Creates a new prompt dialog state for the given app and newly discovered release.
     pub fn new(app: &'static App, release: Release, running_version: impl Into<String>) -> Self {
         let is_self_updating = crate::self_update::is_self_updating(app);
-        Self { app, release, running_version: running_version.into(), is_self_updating, open: true, status_message: None, is_installing: false }
+        Self { app, release, running_version: running_version.into(), is_self_updating, open: true, status_message: None, is_installing: false, phase: None }
     }
 
     /// Renders the modal window on the given egui context.
@@ -90,10 +92,14 @@ impl StartupPrompt {
                         }
 
                         if self.is_installing {
+                            let (text, fraction) = progress_text(self.phase);
                             ui.horizontal(|ui| {
                                 ui.spinner();
-                                ui.label(RichText::new("جارٍ تنزيل التحديث وتثبيته…").size(12.0).color(text_primary));
+                                ui.label(RichText::new(text).size(12.0).color(text_primary));
                             });
+                            if let Some(f) = fraction {
+                                ui.add(egui::ProgressBar::new(f).desired_height(6.0).fill(fill));
+                            }
                         } else {
                             let desc =
                                 format!("يتوفر إصدار جديد من {} ({}) بأحدث المزايا والإصلاحات.", self.app.name, self.release.version_label());
@@ -468,6 +474,22 @@ fn decode_icon(png: &[u8], max_side: u32) -> Option<egui::ColorImage> {
     Some(egui::ColorImage::from_rgba_unmultiplied(size, rgba.as_raw()))
 }
 
+/// The progress line of a running update, and how far the download is (0–1) while it runs.
+fn progress_text(phase: Option<crate::JobPhase>) -> (String, Option<f32>) {
+    use crate::JobPhase;
+    let percent = |done: u64, total: u64| (total > 0).then(|| (done.min(total) as f64 / total as f64) as f32);
+    match phase {
+        Some(JobPhase::Downloading { done, total }) => match percent(done, total) {
+            Some(f) => (format!("جارٍ تنزيل التحديث… {}٪", (f * 100.0).round() as u32), Some(f)),
+            None => ("جارٍ تنزيل التحديث…".into(), None),
+        },
+        Some(JobPhase::Reconnecting { done, total }) => ("انقطع الاتصال، جارٍ المتابعة…".into(), percent(done, total)),
+        Some(JobPhase::Verifying) => ("جارٍ التحقق من التحديث…".into(), None),
+        Some(JobPhase::Installing | JobPhase::Waiting | JobPhase::Removing) => ("جارٍ تثبيت التحديث…".into(), None),
+        None => ("جارٍ تنزيل التحديث وتثبيته…".into(), None),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -500,6 +522,7 @@ mod tests {
             open: true,
             status_message: None,
             is_installing: false,
+            phase: None,
         }
     }
 
