@@ -10,6 +10,10 @@ Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.
 Licensed under the MIT License or the Apache License, Version 2.0, at your option
 (LICENSE-MIT, LICENSE-APACHE). Source: https://github.com/storytold/wordcraft
 
+crates/craft-update is craft-update from https://github.com/storytold/craft-libs (rev c5a1cbf),
+by the same team under the same licenses, modified for كلمة (its signing identity and Arabic
+update dialogs).
+
 The ArtCraft and WordCraft names, wordmarks and logos are trademarks of the ArtCraft Team. They are
 not covered by the license above and كلمة does not use them; it names WordCraft only to say what it
 is based on. كلمة is not made or endorsed by the ArtCraft Team.

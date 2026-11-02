@@ -31,11 +31,11 @@
 
 | النظام | الملف | الخطوات |
 |---|---|---|
-| macOS ‏(Apple Silicon وIntel، الإصدار 11 فأحدث) | `Kalima-macos.dmg` | افتح الملف واسحب كلمة إلى «التطبيقات». موقّع وموثَّق من Apple. |
-| Windows | `Kalima-windows-x64.zip` | فك الضغط وشغّل `Kalima.exe`. |
-| Linux | `Kalima-linux-x64.tar.gz` | فك الضغط وشغّل `kalima`. |
+| macOS ‏(Apple Silicon وIntel، الإصدار 11 فأحدث) | `kalima-…-macos-universal.dmg` | افتح الملف واسحب كلمة إلى «التطبيقات». موقّع وموثَّق من Apple. |
+| Windows | `kalima-…-windows-x64-portable.zip` | فك الضغط وشغّل `Kalima.exe`. |
+| Linux | `kalima-…-linux-x86_64.tar.gz` | فك الضغط وشغّل `kalima`. |
 
-للتحديث: نزّل الإصدار الجديد واستبدل به القديم، وتبقى إعداداتك ومستنداتك كما هي.
+التحديث تلقائي: عند صدور إصدار جديد يعرض كلمة «تحديث وإعادة تشغيل»، وتبقى إعداداتك ومستنداتك كما هي.
 
 ## ما أضافه ناصر القحطاني إلى WordCraft
 

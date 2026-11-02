@@ -1,7 +1,7 @@
 name: Release
 
 # A push to `release` builds كلمة for macOS, Windows and Linux and publishes the downloads as a
-# GitHub release. Unsigned: macOS and Windows warn about an unknown developer on first open.
+# GitHub release, which installed copies offer as an update (update and restart).
 on:
   push:
     branches: [release]
@@ -24,7 +24,10 @@ jobs:
             name: linux-x64
     runs-on: ${{ matrix.os }}
     env:
-      KALIMA_BUILD: ${{ github.run_number }}  # the app compares it with the latest release
+      # Release n is version 1.<n>.0: the app's own version, the tag and the download names, which
+      # the in-app updater (crates/craft-update) matches and checks.
+      KALIMA_VERSION: 1.${{ github.run_number }}.0
+      WORDCRAFT_VERSION: 1.${{ github.run_number }}.0
     steps:
       - uses: actions/checkout@v4
       - name: Interface translations (with Arabic)
@@ -61,7 +64,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           DIST="$PWD/out" packaging/macos/package.sh --arch universal
-          mv out/*.dmg "out/Kalima-${{ matrix.name }}.dmg"
+          mv out/*.dmg "out/kalima-$KALIMA_VERSION-macos-universal.dmg"
           rm -f out/*.zip
       - name: Windows and Linux builds
         if: runner.os != 'macOS'
@@ -72,10 +75,10 @@ jobs:
           cp LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md assets/fonts/OFL-*.txt out/Kalima/
           if [[ "$RUNNER_OS" == Windows ]]; then
             cp target/release/wordcraft.exe out/Kalima/Kalima.exe
-            (cd out && 7z a "Kalima-${{ matrix.name }}.zip" Kalima >/dev/null)
+            (cd out && 7z a "kalima-$KALIMA_VERSION-windows-x64-portable.zip" Kalima >/dev/null)
           else
             cp target/release/wordcraft out/Kalima/kalima
-            tar -C out -czf "out/Kalima-${{ matrix.name }}.tar.gz" Kalima
+            tar -C out -czf "out/kalima-$KALIMA_VERSION-linux-x86_64.tar.gz" Kalima
           fi
           rm -rf out/Kalima
       - uses: actions/upload-artifact@v4
@@ -93,15 +96,19 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: kalima-${{ github.run_number }}
+          tag_name: v1.${{ github.run_number }}.0
           name: كلمة ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           files: dist/*
           body: |
             كلمة: معالج نصوص عربي مبني على WordCraft من فريق ArtCraft.
 
-            - macOS (Apple Silicon and Intel, macOS 11 or later): `Kalima-macos.dmg`. Signed and notarized by Apple.
-            - Windows: `Kalima-windows-x64.zip`, unzip and run `Kalima.exe`.
-            - Linux: `Kalima-linux-x64.tar.gz`, extract and run `kalima`.
+            - macOS (Apple Silicon and Intel, macOS 11 or later): the `.dmg`. Signed and notarized by Apple.
+            - Windows: the `windows-x64-portable.zip`, unzip and run `Kalima.exe`.
+            - Linux: the `linux-x86_64.tar.gz`, extract and run `kalima`.
+
+            كلمة يحدّث نفسه: عند توفر إصدار جديد تظهر رسالة «تحديث وإعادة تشغيل».

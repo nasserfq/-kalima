@@ -11,7 +11,17 @@
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.wordcraft.png")),
     accent: Some([0x3f, 0x5f, 0xe0]),
-    ..craft_update::suite::WORDCRAFT
+    developer: "ناصر القحطاني",
+    // Releases `v1.<n>.0` with `kalima-<version>-<os>-<arch>` downloads; the binary is `kalima`
+    // (`Kalima.exe`) and the Mac bundle `كلمة.app` (ai.storyteller.kalima).
+    ..craft_update::app::App::new("kalima", APP_NAME, "Arabic word processor", "nasserfq/kalima")
+};
+
+/// This build's version: `1.<n>.0` for release n (the release workflow sets KALIMA_VERSION),
+/// else the package version (local builds, which don't update themselves).
+pub const APP_VERSION: &str = match option_env!("KALIMA_VERSION") {
+    Some(v) => v,
+    None => env!("CARGO_PKG_VERSION"),
 };
 
 /// The app's name as the window and its title bar show it. Settings folders and file metadata
