@@ -66,6 +66,8 @@ jobs:
           DIST="$PWD/out" packaging/macos/package.sh --arch universal
           mv out/*.dmg "out/kalima-$KALIMA_VERSION-macos-universal.dmg"
           rm -f out/*.zip
+          # Claude desktop extension: double-click to connect Claude to the installed app.
+          packaging/mcpb/make-mcpb.sh out "$KALIMA_VERSION"
       - name: Windows and Linux builds
         if: runner.os != 'macOS'
         shell: bash
@@ -116,4 +118,4 @@ jobs:
 
             كلمة يحدّث نفسه: عند توفر إصدار جديد تظهر رسالة «تحديث وإعادة تشغيل».
 
-            جاهز للذكاء الاصطناعي: يأتي مع خادم MCP (`kalima-cli mcp`) ليتحكم Claude وغيره من تطبيقات الذكاء الاصطناعي بكلمة. طريقة الإعداد في ملف README.
+            جاهز للذكاء الاصطناعي: يأتي مع خادم MCP (`kalima-cli mcp`) ليتحكم Claude وغيره من تطبيقات الذكاء الاصطناعي بكلمة. للربط اضغط «ربط مع الذكاء الاصطناعي» في تبويب «مساعدة» داخل كلمة، أو افتح ملف `kalima-claude-extension-macos.mcpb` على Mac ليضيفه Claude بنقرة.

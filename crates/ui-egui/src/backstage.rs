@@ -131,16 +131,21 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
                 }
             }
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-                for (label, id) in [("About", "about")] {
+                // Bottom up: About at the bottom, Connect to AI Apps above it.
+                for id in ["about", "connectAi"] {
+                    let label = if id == "about" { tl!("About") } else { crate::ai_connect_ui::title() };
                     let (r, resp) = ui.allocate_exact_size(vec2(200.0, 32.0), Sense::click());
-                    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), tl!(label)));
+                    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, ui.is_enabled(), label));
                     if resp.hovered() {
                         ui.painter().rect_filled(r, 0.0, egui::Color32::from_white_alpha(26));
                     }
-                    ui.painter().text(pos2(r.min.x + 22.0, r.center().y), Align2::LEFT_CENTER, tl!(label), regular(13.0), egui::Color32::WHITE);
+                    ui.painter().text(pos2(r.min.x + 22.0, r.center().y), Align2::LEFT_CENTER, label, regular(13.0), egui::Color32::WHITE);
                     if resp.clicked() {
                         if id == "about" {
                             app.dialog = crate::dialogs::Dialog::open("about", app);
+                        } else {
+                            app.ui.backstage = false;
+                            crate::ai_connect_ui::open(app);
                         }
                     }
                 }

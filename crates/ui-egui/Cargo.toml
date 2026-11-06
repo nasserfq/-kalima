@@ -45,6 +45,8 @@ zbus = "=5.19.0"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
 craft-update = { workspace = true }
+# Help ▸ Connect to AI Apps writes the AI apps' MCP settings (no UI code; crates/ai-connect).
+ai-connect = { path = "../ai-connect" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # The browser clock (`SystemTime::now()`/`Instant::now()` panic on wasm32).

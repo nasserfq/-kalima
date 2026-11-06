@@ -1137,6 +1137,14 @@ fn paint_view_and_tables(pen: &Pen, name: &str) -> bool {
             pen.rect(3.0, 3.0, 17.0, 17.0, c);
             pen.fill(&[(8.0, 6.5), (8.0, 13.5), (14.0, 10.0)], a);
         }
+        // A plug on its cord: Connect to AI Apps.
+        "connectAi" => {
+            pen.line(&[(7.5, 2.5), (7.5, 6.0)]);
+            pen.line(&[(12.5, 2.5), (12.5, 6.0)]);
+            pen.frect(5.0, 6.0, 15.0, 11.5, a);
+            pen.rect(5.0, 6.0, 15.0, 11.5, c);
+            pen.line(&[(10.0, 11.5), (10.0, 14.5), (13.0, 17.5), (17.5, 17.5)]);
+        }
         // A page with a filled band at the top and a style mark: the document's template.
         "documentTemplate" => {
             pen.page(4.0, 2.0, 16.0, 18.0);

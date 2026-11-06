@@ -178,5 +178,6 @@ pub(super) fn help(app: &mut WordApp, ui: &mut Ui) {
     });
     group(ui, "Agents", None, app, |ui, app| {
         big(ui, app, "macros", "Commands", "ui.dialog", json!({"name": "commands"}), false);
+        big(ui, app, "connectAi", "Connect to\nAI Apps…", "ui.connectAi", json!({}), false);
     });
 }

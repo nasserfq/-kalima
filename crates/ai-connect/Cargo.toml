@@ -1,0 +1,16 @@
+[package]
+name = "ai-connect"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Connect the app's MCP server to the AI apps on this computer (Claude, Claude Code, Codex, Cursor, VS Code, Windsurf, Gemini CLI, LM Studio) by writing their own settings"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

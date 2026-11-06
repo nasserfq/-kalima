@@ -43,6 +43,12 @@
 
 يعمل مع أي تطبيق يدعم MCP، مثل Claude ‏(التطبيق وClaude Code)، وCodex من OpenAI، وCursor، وVS Code مع Copilot، وGemini CLI، وLM Studio ‏(نماذج تعمل على جهازك دون إنترنت). الخادم مجاني ويعمل على جهازك، أما الذكاء الاصطناعي فمن التطبيق الذي تختاره وبحسب اشتراكك فيه.
 
+**الطريقة الأسهل، بنقرة:** في كلمة افتح تبويب «مساعدة» ← «ربط مع الذكاء الاصطناعي» (أو من قائمة «ملف»). تظهر تطبيقات الذكاء الاصطناعي المثبتة على جهازك، مثل Claude وClaude Code وCodex وCursor وVS Code وWindsurf وGemini CLI وLM Studio، فاضغط «ربط» بجانب التطبيق ثم أعد تشغيله. ولأي تطبيق آخر يدعم MCP اضغط «نسخ الإعداد» والصقه في إعداداته.
+
+على Mac يمكنك أيضًا تنزيل ملف `kalima-claude-extension-macos.mcpb` من [صفحة الإصدارات](https://github.com/nasserfq/kalima/releases/latest) وفتحه، فيعرض تطبيق Claude نافذة «تثبيت» ويضيف كلمة بنقرة.
+
+**الإعداد اليدوي (إن أردت):**
+
 **1. مكان الخادم:** يُثبَّت مع كلمة ويُحدَّث معه.
 
 | النظام | المسار |
@@ -96,7 +102,7 @@ Kalima.exe --control 7981                                           # Windows
 - الواجهة العربية افتراضيًا، والاتجاه من اليمين إلى اليسار في الواجهة والمستندات.
 - التدقيق الإملائي العربي بمدقق النظام في macOS وWindows.
 - خط Noto Sans Arabic بحجم مريح للقراءة.
-- خادم MCP ضمن التنزيلات لتتحكم تطبيقات الذكاء الاصطناعي بكلمة.
+- خادم MCP ضمن التنزيلات لتتحكم تطبيقات الذكاء الاصطناعي بكلمة، ونافذة «ربط مع الذكاء الاصطناعي» تربطه بتطبيقات الذكاء الاصطناعي بنقرة، وإضافة Claude ‏(`.mcpb`).
 - الاسم والشعار، وتطبيق Mac موقّع وموثَّق لأجهزة Apple Silicon وIntel، وتنزيلات Windows وLinux.
 
 ## شكر
@@ -126,7 +132,10 @@ Kalima ships an [MCP](https://modelcontextprotocol.io) server, so Claude and any
 (Codex, Cursor, VS Code, Gemini CLI, LM Studio…) can write, format, read and save documents. It is
 installed and updated with the app: `/Applications/كلمة.app/Contents/MacOS/kalima-cli` on macOS,
 `kalima-cli.exe` beside `Kalima.exe` on Windows, `kalima-cli` beside `kalima` on Linux. Add it to
-your client as the command `kalima-cli` with the argument `mcp` (for example
+your client as the command `kalima-cli` with the argument `mcp` (Help ▸ Connect to AI Apps does this
+with one click for Claude, Claude Code, Codex, Cursor, VS Code, Windsurf, Gemini CLI and LM Studio; on
+macOS the `kalima-claude-extension-macos.mcpb` release download installs it into Claude; by hand, for
+example
 `claude mcp add kalima -- "/Applications/كلمة.app/Contents/MacOS/kalima-cli" mcp`). To drive the
 open window instead, start Kalima with `--control 7981` and use `mcp --connect 127.0.0.1:7981`.
 Details: [docs/mcp.md](docs/mcp.md).
