@@ -2,7 +2,9 @@
 # Build, sign and (optionally) notarize the macOS release artifacts:
 #
 #   $DIST/wordcraft-<version>-macos-<arch>.dmg          كلمة.app on a drag-to-Applications DMG
-#   $DIST/wordcraft-cli-<version>-macos-<arch>.zip      the headless CLI
+#
+# The command line (and its MCP server for AI apps) ships inside the app, as
+# كلمة.app/Contents/MacOS/kalima-cli, so it installs and updates with it.
 #
 # Usage: packaging/macos/package.sh [--arch universal|aarch64|x86_64] [--skip-build]
 #
@@ -41,7 +43,6 @@ SHORT_VERSION="${VERSION%%-*}"
 WORK="$CARGO_TARGET_DIR/macos-package"
 APP="$WORK/كلمة.app"
 DMG="$DIST/wordcraft-$VERSION-macos-$ARCH.dmg"
-CLI_ZIP="$DIST/wordcraft-cli-$VERSION-macos-$ARCH.zip"
 
 NOTARIZE=0
 if [[ "$IDENTITY" = "-" ]]; then
@@ -117,6 +118,8 @@ echo "==> assembling $APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 # Executable and icon carry the display name (CFBundleExecutable / CFBundleIconFile).
 cp "$WORK/bin/wordcraft" "$APP/Contents/MacOS/WordCraft"
+# The command line and MCP server for AI apps (docs/mcp.md), beside the app's executable.
+cp "$WORK/bin/wordcraft-cli" "$APP/Contents/MacOS/kalima-cli"
 cp "$ROOT/assets/app-icon/wordcraft.icns" "$APP/Contents/Resources/WordCraft.icns"
 # The licences travel with the app (About no longer repeats WordCraft's notice).
 cp "$ROOT/LICENSE-MIT" "$ROOT/LICENSE-APACHE" "$ROOT/NOTICE" "$ROOT/ATTRIBUTION.md" "$ROOT"/assets/fonts/OFL-*.txt "$APP/Contents/Resources/"
@@ -133,7 +136,7 @@ printf 'APPL????' >"$APP/Contents/PkgInfo"
 # Clear them before signing; nothing after this point may write xattrs onto the bundle (#525).
 xattr -cr "$APP"
 # Sign inside-out: nested code first, then the bundle itself (no --deep on the final signature).
-# Today the only nested code is the main executable; frameworks/helpers would be signed here too.
+sign --options runtime "$APP/Contents/MacOS/kalima-cli"
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP/Contents/MacOS/WordCraft"
 sign --options runtime --entitlements "$HERE/entitlements.plist" "$APP"
 codesign --verify --strict --deep --verbose=2 "$APP"
@@ -220,19 +223,6 @@ if [[ "$NOTARIZE" = 1 ]]; then
   spctl --assess --type open --context context:primary-signature -vvv "$DMG"
 fi
 
-# ---- CLI ---------------------------------------------------------------------------------------
-echo "==> building $CLI_ZIP"
-CLI_DIR="$WORK/wordcraft-cli-$VERSION-macos-$ARCH"
-mkdir -p "$CLI_DIR"
-cp "$WORK/bin/wordcraft-cli" "$CLI_DIR/"
-copy_docs "$CLI_DIR"
-sign --options runtime "$CLI_DIR/wordcraft-cli"
-codesign --verify --strict --verbose=2 "$CLI_DIR/wordcraft-cli"
-rm -f "$CLI_ZIP"
-ditto -c -k --norsrc --noextattr --keepParent "$CLI_DIR" "$CLI_ZIP"
-# A bare Mach-O can't carry a stapled ticket; Gatekeeper looks the notarization up online.
-if [[ "$NOTARIZE" = 1 ]]; then notarize "$CLI_ZIP"; fi
-
-"$WORK/bin/wordcraft-cli" --version
+"$APP/Contents/MacOS/kalima-cli" --version
 echo "==> done"
-ls -lh "$DMG" "$CLI_ZIP"
+ls -lh "$DMG"

@@ -70,14 +70,17 @@ jobs:
         if: runner.os != 'macOS'
         shell: bash
         run: |
-          cargo build --release --locked -p wordcraft
+          cargo build --release --locked -p wordcraft -p wordcraft-cli
           mkdir -p out/Kalima
           cp LICENSE-MIT LICENSE-APACHE NOTICE ATTRIBUTION.md assets/fonts/OFL-*.txt out/Kalima/
           if [[ "$RUNNER_OS" == Windows ]]; then
             cp target/release/wordcraft.exe out/Kalima/Kalima.exe
+            # The command line and MCP server for AI apps (docs/mcp.md).
+            cp target/release/wordcraft-cli.exe out/Kalima/kalima-cli.exe
             (cd out && 7z a "kalima-$KALIMA_VERSION-windows-x64-portable.zip" Kalima >/dev/null)
           else
             cp target/release/wordcraft out/Kalima/kalima
+            cp target/release/wordcraft-cli out/Kalima/kalima-cli
             tar -C out -czf "out/kalima-$KALIMA_VERSION-linux-x86_64.tar.gz" Kalima
           fi
           rm -rf out/Kalima
@@ -112,3 +115,5 @@ jobs:
             - Linux: the `linux-x86_64.tar.gz`, extract and run `kalima`.
 
             كلمة يحدّث نفسه: عند توفر إصدار جديد تظهر رسالة «تحديث وإعادة تشغيل».
+
+            جاهز للذكاء الاصطناعي: يأتي مع خادم MCP (`kalima-cli mcp`) ليتحكم Claude وغيره من تطبيقات الذكاء الاصطناعي بكلمة. طريقة الإعداد في ملف README.
