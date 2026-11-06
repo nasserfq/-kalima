@@ -218,6 +218,14 @@ fn body(app: &mut WordApp, ui: &mut egui::Ui) {
         });
         refresh(&mut app.connect_ai);
     }
+    ui.add_space(4.0);
+    ui.label(
+        egui::RichText::new(l(
+            "نصيحة: اذكر kalima في طلبك ليستخدم التطبيقُ كلمة لا Microsoft Word، مثل: «استخدم أدوات kalima لإنشاء مستند جديد…».",
+            "Tip: say kalima in your request so the AI app uses Kalima, not Microsoft Word, e.g. \"Use the kalima tools to create a new document…\".",
+        ))
+        .small(),
+    );
     if let Some((text, bad)) = &app.connect_ai.message {
         ui.add_space(6.0);
         if *bad {
