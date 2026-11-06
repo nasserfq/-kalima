@@ -98,6 +98,7 @@ impl WordApp {
             return;
         }
         updates_ui::show(self, ctx);
+        crate::ai_connect_ui::show(self, ctx);
         #[cfg(not(target_arch = "wasm32"))]
         file_browser::show(self, ctx);
         colors::show(self, ctx);

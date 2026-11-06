@@ -38,6 +38,7 @@ macro_rules! tl {
 
 pub mod a11y;
 pub mod a11y_pane;
+mod ai_connect_ui;
 pub mod async_saves;
 pub mod autoscroll;
 pub mod backstage;
@@ -511,6 +512,8 @@ pub struct WordApp {
     /// Focus (#1678): the ribbon is dropped down from the Focus bar, over the page.
     pub(crate) focus_ribbon: bool,
     pub(crate) updates_rt: updates_ui::Runtime,
+    /// Help ▸ Connect to AI Apps: the window and its last result.
+    pub(crate) connect_ai: ai_connect_ui::Runtime,
     control_rx: Option<std::sync::mpsc::Receiver<ControlRequest>>,
     /// Admitted `ui.screenshot` requests: count/byte budgets, retries and completion slots.
     shots: control::Shots,

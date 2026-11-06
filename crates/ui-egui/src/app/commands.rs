@@ -506,6 +506,22 @@ impl WordApp {
                 crate::updates_ui::check(self);
                 Value::Null
             }
+            // Help ▸ Connect to AI Apps; with `client` (claude, claudeCode, codex, cursor, vscode,
+            // windsurf, gemini, lmstudio) it connects that app without the window, and with
+            // `"disconnect": true` takes the connection out again.
+            "ui.connectAi" | "help.connectAi" => match s("client") {
+                None => {
+                    crate::ai_connect_ui::open(self);
+                    Value::Null
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                Some(client) => {
+                    let disconnect = p.get("disconnect").and_then(Value::as_bool).unwrap_or(false);
+                    return Some(crate::ai_connect_ui::run(client, disconnect));
+                }
+                #[cfg(target_arch = "wasm32")]
+                Some(_) => return Some(Err("connecting AI apps needs the desktop app".into())),
+            },
             "ui.tab" => {
                 let tab = s("tab").unwrap_or("Home").to_string();
                 if tab == "File" {
@@ -1035,6 +1051,7 @@ pub(crate) fn works_without_document(id: &str) -> bool {
             | "ui.caretAnimation"
             | "ui.startScreen"
             | "ui.checkForUpdates"
+            | "ui.connectAi"
     ) || id.starts_with("help.")
 }
 

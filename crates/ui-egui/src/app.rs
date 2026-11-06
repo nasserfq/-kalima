@@ -101,6 +101,7 @@ impl WordApp {
             integrated_titlebar: false,
             mac_titlebar: chrome::MacTitleBar::default(),
             updates_rt: updates_ui::Runtime::default(),
+            connect_ai: Default::default(),
             control_rx: None,
             shots: crate::control::Shots::default(),
             capture_epoch: 0,

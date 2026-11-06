@@ -11,6 +11,23 @@ wordcraft-cli mcp --connect 127.0.0.1:7981 # …including clicks, keys and scree
 
 Claude Code: `claude mcp add wordcraft -- wordcraft-cli mcp`.
 
+## Connecting AI apps with one click (كلمة)
+
+Help ▸ Connect to AI Apps (also in File) lists the AI apps installed on this computer and adds
+`kalima-cli mcp` (from the app's own folder) to their settings with one button each, or takes it
+out again: Claude, Claude Code, Codex, Cursor, VS Code, Windsurf, Gemini CLI and LM Studio. It
+writes each app's own file (`claude_desktop_config.json`, `~/.claude.json`, `~/.codex/config.toml`,
+`~/.cursor/mcp.json`, VS Code's `User/mcp.json`, `~/.codeium/windsurf/mcp_config.json`,
+`~/.gemini/settings.json`, `~/.lmstudio/mcp.json`), keeps everything else in it, saves the original
+once as `<file>.kalima-backup`, and never rewrites a file it can't read; a VS Code `mcp.json` with
+comments gets VS Code's own install link instead. Copy Settings gives any other MCP app the
+`mcpServers` block to paste. The logic is the UI-free `ai-connect` crate; the command is
+`ui.connectAi` (`{"client": "cursor"}` connects without the window, `"disconnect": true` undoes it).
+
+macOS releases also carry `kalima-claude-extension-macos.mcpb` (`packaging/mcpb/make-mcpb.sh`): a
+Claude desktop extension that runs the server inside `/Applications/كلمة.app`, so opening it
+installs كلمة into Claude through Claude's own window and it updates with the app.
+
 With `--connect`, the bridge sends the app's control key, which it reads from
 `WORDCRAFT_CONTROL_KEY` or from the key file the app writes at start. It sends the key only to
 loopback addresses; see [Keys](control-protocol.md#keys). The bridge serves even when the app

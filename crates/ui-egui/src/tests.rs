@@ -7187,3 +7187,26 @@ fn focus_hides_the_ribbon_and_escape_brings_it_back() {
     h.step();
     assert!(h.state().session.view.read_mode && shown(&h, "Focus"), "Immersive Reader keeps the status bar");
 }
+
+/// Help ▸ Connect to AI Apps opens its window (in English in tests), File lists it beside About,
+/// and the command connects only the AI apps it knows.
+#[test]
+fn connect_ai_apps_window_opens_and_unknown_apps_are_refused() {
+    use egui_kittest::kittest::Queryable;
+    let mut a = app();
+    assert_eq!(a.run("ui.connectAi", json!({})).unwrap(), Value::Null);
+    assert!(a.connect_ai.open);
+    let e = a.run("ui.connectAi", json!({"client": "nope"})).unwrap_err();
+    assert!(e.contains("unknown AI app") && e.contains("claudeCode"), "{e}");
+    let mut h = harness(a);
+    h.run_steps(3);
+    assert!(h.query_by_label("Connect to AI Apps").is_some(), "the window shows");
+    h.get_by_label("Close").click();
+    h.run_steps(3);
+    assert!(!h.state().connect_ai.open, "Close closes it");
+    h.state_mut().run("ui.tab", json!({"tab": "File"})).unwrap();
+    h.run_steps(3);
+    h.get_by_label("Connect to AI Apps").click();
+    h.run_steps(3);
+    assert!(h.state().connect_ai.open && !h.state().ui.backstage, "File › Connect to AI Apps opens it over the document");
+}

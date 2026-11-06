@@ -150,6 +150,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai-connect"
+version = "0.13.2"
+dependencies = [
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "alloc-no-stdlib"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6924,6 +6933,7 @@ dependencies = [
 name = "wordcraft-ui-egui"
 version = "0.13.2"
 dependencies = [
+ "ai-connect",
  "cfb",
  "chrono",
  "craft-i18n",
