@@ -29,7 +29,7 @@ jobs:
       KALIMA_VERSION: 1.${{ github.run_number }}.0
       WORDCRAFT_VERSION: 1.${{ github.run_number }}.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Interface translations (with Arabic)
         shell: bash
         run: |
@@ -81,7 +81,7 @@ jobs:
             tar -C out -czf "out/kalima-$KALIMA_VERSION-linux-x86_64.tar.gz" Kalima
           fi
           rm -rf out/Kalima
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
           path: out/*
@@ -92,7 +92,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
