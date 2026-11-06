@@ -152,6 +152,16 @@ pub fn show(app: &mut WordApp, ui: &mut Ui) {
             });
         });
     egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.ribbon).inner_margin(egui::Margin::symmetric(40, 30))).show(ui, |ui| {
+        // macOS: the page's top band is title bar too, so the window drags from beside the traffic
+        // lights, which sit over the page when the interface is mirrored (Arabic). Registered
+        // before the page's widgets so anything drawn there still takes its own clicks.
+        if mac {
+            let pane = ui.max_rect().expand2(vec2(40.0, 30.0));
+            let band = Rect::from_min_size(pane.min, vec2(pane.width(), app.mac_titlebar.height));
+            if ui.interact(band, ui.scope_id().with("backstage_page_drag"), Sense::click_and_drag()).drag_started() {
+                ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
+            }
+        }
         // The Print page fills the pane and scrolls its settings and its preview itself (#1156).
         if app.ui.backstage_page == "print" {
             export_page(app, ui);
