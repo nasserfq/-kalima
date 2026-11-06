@@ -183,7 +183,7 @@ impl Server {
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": {"tools": {}, "resources": {}},
-                    "serverInfo": {"name": "wordcraft", "title": "WordCraft", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": "https://github.com/nasserfq/kalima"},
+                    "serverInfo": {"name": "kalima", "title": "كلمة (Kalima)", "version": env!("CARGO_PKG_VERSION"), "websiteUrl": "https://github.com/nasserfq/kalima"},
                     "instructions": format!(
                         "{INSTRUCTIONS} Backend: {}. Kalima (كلمة), based on WordCraft by the ArtCraft team: https://github.com/nasserfq/kalima · https://github.com/storytold/wordcraft",
                         self.backend.describe()

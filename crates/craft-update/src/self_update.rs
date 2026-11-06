@@ -466,40 +466,71 @@ fn replace_appimage(new: &Path, path: &Path) -> Result<(), String> {
 }
 
 /// Extracts the app's binary from a release tarball and atomically renames it over the running
-/// standalone executable.
+/// standalone executable. The command line beside it (`<id>-cli`, with the MCP server for AI apps)
+/// is refreshed too when the tarball carries one, so the two stay the same version.
 #[cfg(unix)]
 fn replace_standalone(app: &App, tarball: &Path, exe: &Path) -> Result<(), String> {
-    use std::os::unix::fs::PermissionsExt;
     let dir = exe.parent().ok_or_else(|| "executable isn't in a folder".to_string())?;
-    let f = std::fs::File::open(tarball).map_err(|e| format!("could not open {}: {e}", tarball.display()))?;
-    let gz = flate2::read::GzDecoder::new(f);
-    let mut archive = tar::Archive::new(gz);
     let staged = dir.join(format!(".{}.update", exe.file_name().and_then(|n| n.to_str()).unwrap_or("app")));
     let bin_suffix = format!("/{}", app.id);
     let bin_rel = format!("bin/{}", app.id);
-    let mut found = false;
+    let found = extract_from_tarball(tarball, &staged, |path| {
+        let path_str = path.to_string_lossy();
+        path_str == bin_rel || path_str.ends_with(&bin_suffix) || path.file_name().is_some_and(|n| n == app.id)
+    })?;
+    if !found {
+        return Err(format!("release archive did not contain binary for {}", app.id));
+    }
+    install_staged(&staged, exe)?;
+    // The command line is optional: an older tarball has none, and a failure here must not undo
+    // the app's own update.
+    let cli_name = format!("{}-cli", app.id);
+    let cli = dir.join(&cli_name);
+    let cli_staged = dir.join(format!(".{cli_name}.update"));
+    if let Ok(true) = extract_from_tarball(tarball, &cli_staged, |path| path.file_name().is_some_and(|n| n == cli_name.as_str())) {
+        let _ = install_staged(&cli_staged, &cli);
+    }
+    Ok(())
+}
+
+/// Writes the first regular file in `tarball` whose path `wanted` accepts to `staged`. Returns
+/// whether one was found; nothing is left at `staged` when none was.
+#[cfg(unix)]
+fn extract_from_tarball(tarball: &Path, staged: &Path, wanted: impl Fn(&Path) -> bool) -> Result<bool, String> {
+    let f = std::fs::File::open(tarball).map_err(|e| format!("could not open {}: {e}", tarball.display()))?;
+    let gz = flate2::read::GzDecoder::new(f);
+    let mut archive = tar::Archive::new(gz);
     for entry in archive.entries().map_err(|e| format!("could not read archive entries: {e}"))? {
         let mut entry = entry.map_err(|e| format!("archive entry error: {e}"))?;
         if !entry.header().entry_type().is_file() {
             continue;
         }
-        let path = entry.path().map_err(|e| format!("archive path error: {e}"))?;
-        let path_str = path.to_string_lossy();
-        if path_str == bin_rel || path_str.ends_with(&bin_suffix) || path.file_name().is_some_and(|n| n == app.id) {
-            let mut out = std::fs::File::create(&staged).map_err(|e| format!("could not create {}: {e}", staged.display()))?;
-            std::io::copy(&mut entry, &mut out).map_err(|e| format!("could not extract binary: {e}"))?;
-            found = true;
-            break;
+        let path = entry.path().map_err(|e| format!("archive path error: {e}"))?.into_owned();
+        if wanted(&path) {
+            let written = std::fs::File::create(staged)
+                .map_err(|e| format!("could not create {}: {e}", staged.display()))
+                .and_then(|mut out| std::io::copy(&mut entry, &mut out).map_err(|e| format!("could not extract binary: {e}")));
+            if let Err(e) = written {
+                let _ = std::fs::remove_file(staged);
+                return Err(e);
+            }
+            return Ok(true);
         }
     }
-    if !found {
-        let _ = std::fs::remove_file(&staged);
-        return Err(format!("release archive did not contain binary for {}", app.id));
-    }
-    std::fs::set_permissions(&staged, std::fs::Permissions::from_mode(0o755)).map_err(|e| e.to_string())?;
-    std::fs::rename(&staged, exe).map_err(|e| {
-        let _ = std::fs::remove_file(&staged);
-        format!("could not replace {}: {e}", exe.display())
+    Ok(false)
+}
+
+/// Makes `staged` executable and renames it over `dest`.
+#[cfg(unix)]
+fn install_staged(staged: &Path, dest: &Path) -> Result<(), String> {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(staged, std::fs::Permissions::from_mode(0o755)).map_err(|e| {
+        let _ = std::fs::remove_file(staged);
+        e.to_string()
+    })?;
+    std::fs::rename(staged, dest).map_err(|e| {
+        let _ = std::fs::remove_file(staged);
+        format!("could not replace {}: {e}", dest.display())
     })
 }
 
@@ -1912,5 +1943,60 @@ mod tests {
         assert!(!is_bundle_origin(&crate::suite::LAUNCHER, "photocraft-origin"));
         assert!(is_bundle_origin(&crate::suite::PHOTOCRAFT, "photocraft-origin"));
         assert!(!is_bundle_origin(&crate::suite::LAUNCHER, ""));
+    }
+
+    /// A gzipped tarball holding `files` (path, contents), like a Linux release.
+    #[cfg(unix)]
+    fn tarball(at: &Path, files: &[(&str, &[u8])]) {
+        let gz = flate2::write::GzEncoder::new(std::fs::File::create(at).unwrap(), flate2::Compression::fast());
+        let mut builder = tar::Builder::new(gz);
+        for (path, contents) in files {
+            let mut header = tar::Header::new_gnu();
+            header.set_size(contents.len() as u64);
+            header.set_mode(0o755);
+            header.set_cksum();
+            builder.append_data(&mut header, path, *contents).unwrap();
+        }
+        builder.into_inner().unwrap().finish().unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_standalone_update_refreshes_the_command_line_beside_the_app() {
+        let app = crate::suite::PHOTOCRAFT;
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().join("PhotoCraft");
+        std::fs::create_dir(&folder).unwrap();
+        let exe = folder.join(app.id);
+        let cli = folder.join(format!("{}-cli", app.id));
+        std::fs::write(&exe, b"old app").unwrap();
+        std::fs::write(&cli, b"old cli").unwrap();
+        let new = dir.path().join("new.tar.gz");
+        let cli_path = format!("PhotoCraft/{}-cli", app.id);
+        let exe_path = format!("PhotoCraft/{}", app.id);
+        tarball(&new, &[(cli_path.as_str(), b"new cli"), (exe_path.as_str(), b"new app"), ("PhotoCraft/NOTICE", b"n")]);
+        replace_standalone(&app, &new, &exe).unwrap();
+        assert_eq!(std::fs::read(&exe).unwrap(), b"new app");
+        assert_eq!(std::fs::read(&cli).unwrap(), b"new cli");
+        assert!(!folder.join(format!(".{}-cli.update", app.id)).exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_standalone_update_without_a_command_line_still_updates_the_app() {
+        let app = crate::suite::PHOTOCRAFT;
+        let dir = tempfile::tempdir().unwrap();
+        let exe = dir.path().join(app.id);
+        let cli = dir.path().join(format!("{}-cli", app.id));
+        std::fs::write(&exe, b"old app").unwrap();
+        std::fs::write(&cli, b"old cli").unwrap();
+        let new = dir.path().join("new.tar.gz");
+        tarball(&new, &[(format!("x/{}", app.id).as_str(), b"new app")]);
+        replace_standalone(&app, &new, &exe).unwrap();
+        assert_eq!(std::fs::read(&exe).unwrap(), b"new app");
+        assert_eq!(std::fs::read(&cli).unwrap(), b"old cli");
+        let missing = dir.path().join("none.tar.gz");
+        tarball(&missing, &[("x/README", b"r")]);
+        assert!(replace_standalone(&app, &missing, &exe).is_err());
     }
 }

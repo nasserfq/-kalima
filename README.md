@@ -37,11 +37,66 @@
 
 التحديث تلقائي: عند صدور إصدار جديد يعرض كلمة «تحديث وإعادة تشغيل»، وتبقى إعداداتك ومستنداتك كما هي.
 
+## التحكم بكلمة من الذكاء الاصطناعي (MCP)
+
+كلمة جاهز للذكاء الاصطناعي: يأتي مع خادم [MCP](https://modelcontextprotocol.io)، وهو معيار مفتوح تستخدمه تطبيقات الذكاء الاصطناعي لتشغيل البرامج. بعد ربطه تطلب بكلامك، مثلًا «اكتب خطابًا من صفحتين، واجعل العنوان عريضًا، وأضف جدولًا بالتكاليف، واحفظه PDF»، فينفّذه الذكاء الاصطناعي في كلمة خطوة بخطوة: الكتابة والتنسيق والجداول والأنماط وتتبع التغييرات وقراءة المستند والحفظ بصيغة Word أو PDF.
+
+يعمل مع أي تطبيق يدعم MCP، مثل Claude ‏(التطبيق وClaude Code)، وCodex من OpenAI، وCursor، وVS Code مع Copilot، وGemini CLI، وLM Studio ‏(نماذج تعمل على جهازك دون إنترنت). الخادم مجاني ويعمل على جهازك، أما الذكاء الاصطناعي فمن التطبيق الذي تختاره وبحسب اشتراكك فيه.
+
+**1. مكان الخادم:** يُثبَّت مع كلمة ويُحدَّث معه.
+
+| النظام | المسار |
+|---|---|
+| macOS | `/Applications/كلمة.app/Contents/MacOS/kalima-cli` |
+| Windows | `kalima-cli.exe` في مجلد كلمة، بجانب `Kalima.exe` |
+| Linux | `kalima-cli` في مجلد كلمة، بجانب `kalima` |
+
+**2. أضفه إلى تطبيق الذكاء الاصطناعي:**
+
+- **تطبيق Claude:** الإعدادات ← «Developer» ← «Edit Config»، ثم أضف ما يلي إلى الملف `claude_desktop_config.json` وأعد تشغيل Claude:
+
+<div dir="ltr">
+
+```json
+{
+  "mcpServers": {
+    "kalima": {
+      "command": "/Applications/كلمة.app/Contents/MacOS/kalima-cli",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+</div>
+
+- في Windows ضع مسار `kalima-cli.exe` بدل المسار السابق، مع مضاعفة الشرطة المائلة، مثل `"C:\\Users\\اسمك\\Kalima\\kalima-cli.exe"`.
+- **Cursor وGemini CLI وLM Studio** وأغلب التطبيقات الأخرى: الإعداد نفسه (`mcpServers`) في ملف MCP الخاص بكل تطبيق (`~/.cursor/mcp.json`، ‏`~/.gemini/settings.json`، ‏`mcp.json` في LM Studio).
+- **Claude Code:** <code dir="ltr">claude mcp add kalima -- "/Applications/كلمة.app/Contents/MacOS/kalima-cli" mcp</code>
+- **Codex:** <code dir="ltr">codex mcp add kalima -- "/Applications/كلمة.app/Contents/MacOS/kalima-cli" mcp</code>
+
+بهذا يعمل الذكاء الاصطناعي على المستندات في الخلفية دون نافذة، ثم يحفظها حيث تطلب.
+
+**التحكم بنافذة كلمة المفتوحة (اختياري):** لتشاهد الذكاء الاصطناعي يكتب في النافذة نفسها، شغّل كلمة مع منفذ تحكم، واجعل `args` هي <code dir="ltr">["mcp", "--connect", "127.0.0.1:7981"]</code>:
+
+<div dir="ltr">
+
+```sh
+"/Applications/كلمة.app/Contents/MacOS/WordCraft" --control 7981   # macOS
+Kalima.exe --control 7981                                           # Windows
+./kalima --control 7981                                             # Linux
+```
+
+</div>
+
+منفذ التحكم محلي فقط ومحمي بمفتاح سري يكتبه كلمة في مجلد إعداداتك، فلا يصل إليه أحد من الشبكة.
+
 ## ما أضافه ناصر القحطاني إلى WordCraft
 
 - الواجهة العربية افتراضيًا، والاتجاه من اليمين إلى اليسار في الواجهة والمستندات.
 - التدقيق الإملائي العربي بمدقق النظام في macOS وWindows.
 - خط Noto Sans Arabic بحجم مريح للقراءة.
+- خادم MCP ضمن التنزيلات لتتحكم تطبيقات الذكاء الاصطناعي بكلمة.
 - الاسم والشعار، وتطبيق Mac موقّع وموثَّق لأجهزة Apple Silicon وIntel، وتنزيلات Windows وLinux.
 
 ## شكر
@@ -64,6 +119,17 @@ Arabic font, the name and logo, and the signed universal Mac app and Windows and
 
 It is based on [WordCraft](https://github.com/storytold/wordcraft) by the ArtCraft team. Kalima is an
 independent project, not made, sponsored or endorsed by the ArtCraft team.
+
+## Use it from AI apps (MCP)
+
+Kalima ships an [MCP](https://modelcontextprotocol.io) server, so Claude and any other MCP app
+(Codex, Cursor, VS Code, Gemini CLI, LM Studio…) can write, format, read and save documents. It is
+installed and updated with the app: `/Applications/كلمة.app/Contents/MacOS/kalima-cli` on macOS,
+`kalima-cli.exe` beside `Kalima.exe` on Windows, `kalima-cli` beside `kalima` on Linux. Add it to
+your client as the command `kalima-cli` with the argument `mcp` (for example
+`claude mcp add kalima -- "/Applications/كلمة.app/Contents/MacOS/kalima-cli" mcp`). To drive the
+open window instead, start Kalima with `--control 7981` and use `mcp --connect 127.0.0.1:7981`.
+Details: [docs/mcp.md](docs/mcp.md).
 
 ## Build from source
 
