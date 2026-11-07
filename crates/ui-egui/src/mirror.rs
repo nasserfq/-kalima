@@ -134,8 +134,7 @@ pub fn output(ctx: &egui::Context) {
     }
     // Each floating layer (menu, tooltip, dialog) is drawn whole one way, never split by what
     // lies under it: mirrored, or moved with the document area when it opened from the page.
-    let rect = |id: LayerId| ctx.memory(|m| m.area_rect(id.id));
-    let floating: Vec<(LayerId, Rect)> = ids.iter().filter(|id| id.order != Order::Background).filter_map(|&id| Some((id, rect(id)?))).collect();
+    let floating = shown_layers(ctx, &ids);
     let modes = layer_modes(&floating, &overlays, keep);
     with(ctx.viewport_id(), |w| {
         w.last_layers = floating.iter().zip(&modes).rev().map(|(&(_, r), &whole)| (to_screen_as(r, s, keep, whole), whole)).collect();
@@ -258,9 +257,39 @@ fn flip(shape: &mut Shape, s: f32) {
     }
 }
 
+/// The floating layers (menus, tooltips, dialogs) shown now, with where they were laid out.
+/// egui remembers every area it has ever shown, so a dialog that has closed is left out: its old
+/// rect would otherwise still catch clicks and mirror them across the window.
+fn shown_layers(ctx: &egui::Context, ids: &[LayerId]) -> Vec<(LayerId, Rect)> {
+    ctx.memory(|m| {
+        ids.iter().filter(|id| id.order != Order::Background && m.areas().is_visible(id)).filter_map(|&id| Some((id, m.area_rect(id.id)?))).collect()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_closed_dialog_no_longer_catches_clicks() {
+        let ctx = egui::Context::default();
+        let frame = |show: bool| {
+            let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+                if show {
+                    egui::Window::new("dialog").show(ui.ctx(), |ui| ui.label("x"));
+                }
+            });
+            out.textures_delta.clear();
+        };
+        frame(true);
+        let ids: Vec<LayerId> = ctx.memory(|m| m.layer_ids().collect());
+        assert!(shown_layers(&ctx, &ids).iter().any(|(l, _)| l.order == Order::Middle));
+        frame(false);
+        frame(false);
+        let ids: Vec<LayerId> = ctx.memory(|m| m.layer_ids().collect());
+        assert!(ids.iter().any(|l| l.order == Order::Middle), "egui still remembers the closed dialog");
+        assert!(shown_layers(&ctx, &ids).is_empty());
+    }
 
     #[test]
     fn points_round_trip_and_the_document_area_moves_as_a_block() {
@@ -281,7 +310,7 @@ mod tests {
     #[test]
     fn floating_layers_follow_where_they_opened() {
         let keep = Some(Rect::from_min_max(pos2(0.0, 100.0), pos2(1000.0, 800.0)));
-        let l = |n: &str, o, r: [f32; 4]| (LayerId::new(o, egui::Id::new(n)), Rect::from_min_max(pos2(r[0], r[1]), pos2(r[2], r[3])));
+        let l = |n: &str, o, r: [f32; 4]| (LayerId::new(o, egui::Id::unique(n)), Rect::from_min_max(pos2(r[0], r[1]), pos2(r[2], r[3])));
         let dialog = l("dialog", Order::Middle, [300.0, 200.0, 700.0, 500.0]);
         let floating = [
             dialog,
