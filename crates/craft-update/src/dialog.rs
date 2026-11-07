@@ -195,7 +195,8 @@ struct Palette {
 
 impl Palette {
     fn new(ctx: &egui::Context, app: &App) -> Self {
-        let is_dark = ctx.theme() == egui::Theme::Dark;
+        // The visuals the app draws with, not the system theme: an app can be light on a dark system.
+        let is_dark = ctx.global_style().visuals.dark_mode;
         let fill = app.accent.map_or(DEFAULT_ACCENT, |[r, g, b]| Color32::from_rgb(r, g, b));
         Self {
             is_dark,
@@ -655,6 +656,20 @@ mod tests {
         let underlined = line_strokes(&output).contains(&fill);
         assert!(underlined, "the link's underline takes the accent");
         assert!((contrast(Color32::BLACK, Color32::WHITE) - 21.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn the_prompt_follows_the_apps_light_visuals_on_a_dark_system() {
+        let ctx = Context::default();
+        ctx.set_theme(egui::ThemePreference::Dark);
+        ctx.set_visuals(egui::Visuals::light());
+        ctx.global_style_mut(|style| style.animation_time = 0.0);
+        let mut prompt = prompt_for(true);
+        frame(&ctx, &mut prompt, vec![]);
+        let (_, out) = frame(&ctx, &mut prompt, vec![]);
+        let fills = rect_fills(&out);
+        assert!(fills.iter().any(|(_, c)| *c == Color32::from_rgb(255, 255, 255)), "a light card: {fills:?}");
+        assert!(!fills.iter().any(|(_, c)| *c == Color32::from_rgb(26, 26, 28)), "no dark card: {fills:?}");
     }
 
     #[test]
