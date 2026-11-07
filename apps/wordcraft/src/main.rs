@@ -11,6 +11,8 @@
 
 mod animations;
 #[cfg(target_os = "macos")]
+mod app_menu;
+#[cfg(target_os = "macos")]
 mod apple_events;
 #[cfg(target_os = "macos")]
 mod arabic_spelling;
@@ -56,7 +58,10 @@ impl eframe::App for App {
     /// on unsaved changes and active printing.
     fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         #[cfg(target_os = "macos")]
-        apple_events::poll(&self.5, &mut self.0, ctx);
+        {
+            apple_events::poll(&self.5, &mut self.0, ctx);
+            app_menu::sync(wordcraft_ui_egui::i18n::current().code() == "ar", wordcraft_ui_egui::APP_NAME);
+        }
         self.0.logic(ctx);
         self.3.show(frame);
         let window = self.4;
