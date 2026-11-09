@@ -65,7 +65,7 @@
     </Application>
     <!-- The command line and MCP server for AI apps (docs/mcp.md): `kalima-cli mcp` works from any
          terminal or AI app through this alias. -->
-    <Application Id="KalimaCli" Executable="kalima-cli.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="KalimaCli" Executable="kalima-cli.exe" EntryPoint="Windows.FullTrustApplication" desktop4:SupportsMultipleInstances="true">
       <uap:VisualElements
         DisplayName="كلمة (سطر الأوامر)"
         Description="خادم MCP وسطر أوامر كلمة"
