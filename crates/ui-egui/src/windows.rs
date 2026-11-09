@@ -588,6 +588,10 @@ impl WordApp {
             self.after_windows();
             return;
         }
+        // Every further window reads its own pointer input, mirrored in the Arabic interface,
+        // through the plugin: without it a click there lands across the window (the Print
+        // button did nothing in a second كلمة window).
+        self.add_viewport_input(&ctx);
         let Some(mut viewports) = self.windows.viewports.take() else { return };
         let mut list = std::mem::take(&mut self.windows.list);
         self.windows.recent = list.recent().filter_map(|id| list.get(id).copied()).collect();
@@ -700,16 +704,22 @@ impl WordApp {
         }
     }
 
+    /// Register [`ViewportInput`] with egui, once: it mirrors pointer input and reads
+    /// Control-click in the windows drawn in viewports of their own, and carries control input there.
+    fn add_viewport_input(&mut self, ctx: &egui::Context) {
+        if !self.windows.input_plugin {
+            ctx.add_plugin(ViewportInput::default());
+            self.windows.input_plugin = true;
+        }
+    }
+
     /// The control channel's next input, for the active window when it has a viewport of its own:
     /// handed to [`ViewportInput`], which gives it to that viewport's next pass.
     pub(crate) fn send_control_input(&mut self, ctx: &egui::Context) {
         if self.synthetic.is_empty() || self.control_input_is_roots(ctx) {
             return;
         }
-        if !self.windows.input_plugin {
-            ctx.add_plugin(ViewportInput::default());
-            self.windows.input_plugin = true;
-        }
+        self.add_viewport_input(ctx);
         self.settle_windows();
         let target = self.active_viewport();
         // Input queued for a window that has closed since (or moved into the root viewport)
