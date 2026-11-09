@@ -17,6 +17,12 @@ pub fn register() {
         set(lang);
         return;
     }
+    // A Microsoft Store copy never asks to run as administrator (Store policy); Options › Proofing
+    // points to Windows' Language settings instead.
+    if craft_update::store::installed() {
+        log::info!("Arabic spelling: Windows has no Arabic spell checker (add Arabic in Language settings)");
+        return;
+    }
     // Only one try: a declined prompt or a blocked install isn't asked again at every start.
     let Some(marker) = wordcraft_control_key::settings_dir().map(|d| d.join("arabic-spelling-install-tried")) else { return };
     if marker.exists() {

@@ -86,6 +86,17 @@ jobs:
             tar -C out -czf "out/kalima-$KALIMA_VERSION-linux-x86_64.tar.gz" Kalima
           fi
           rm -rf out/Kalima
+      # The Microsoft Store package: uploaded to Partner Center by hand (the Store signs it), so it
+      # stays a workflow artifact and never goes into the GitHub release.
+      - name: Microsoft Store package (MSIX)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: packaging/windows/msix/make-msix.ps1 -Version $env:KALIMA_VERSION -Out store
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: microsoft-store
+          path: store/*.msix
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
@@ -100,6 +111,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
+          pattern: "{macos,windows-x64,linux-x64}"
           merge-multiple: true
       - name: Checksums
         run: cd dist && sha256sum * > SHA256SUMS.txt
