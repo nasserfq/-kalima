@@ -594,3 +594,17 @@ fn every_open_replaces_an_untouched_blank_document_in_its_window() {
     }
     std::fs::remove_dir_all(second.parent().unwrap()).ok();
 }
+
+/// A second window reads its own pointer input through the plugin (mirrored in the Arabic
+/// interface) from its first frame, not only once the control channel has sent input: without
+/// it, clicks in the second window landed across it, and its buttons seemed dead.
+#[test]
+fn a_second_window_gets_its_input_hook_without_the_control_channel() {
+    let ctx = backend();
+    let mut a = app("First");
+    frames(&ctx, &mut a, 2);
+    a.run("file.new", json!({})).unwrap();
+    frames(&ctx, &mut a, 2);
+    assert_ne!(a.active_viewport(), ViewportId::ROOT);
+    assert!(ctx.with_plugin(|_: &mut super::ViewportInput| ()).is_some(), "the input hook is registered");
+}
