@@ -353,4 +353,8 @@ pub(super) fn home(app: &mut WordApp, ui: &mut Ui) {
     group(ui, "Editor", None, app, |ui, app| {
         big(ui, app, "editor", "Editor", "review.spelling", json!({}), false);
     });
+    group(ui, crate::agent_ui::title(), None, app, |ui, app| {
+        let open = app.agent.open;
+        crate::widgets::big_toggle(ui, app, "agent", crate::agent_ui::title(), "ui.agentPane", open);
+    });
 }

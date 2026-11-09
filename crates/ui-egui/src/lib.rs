@@ -38,6 +38,9 @@ macro_rules! tl {
 
 pub mod a11y;
 pub mod a11y_pane;
+#[cfg(not(target_arch = "wasm32"))]
+mod agent_markdown;
+mod agent_ui;
 mod ai_connect_ui;
 pub mod async_saves;
 pub mod autoscroll;
@@ -514,6 +517,8 @@ pub struct WordApp {
     pub(crate) updates_rt: updates_ui::Runtime,
     /// Help ▸ Connect to AI Apps: the window and its last result.
     pub(crate) connect_ai: ai_connect_ui::Runtime,
+    /// Home ▸ AI Agent (وكيل): the side pane's chat and its worker.
+    pub(crate) agent: agent_ui::Runtime,
     control_rx: Option<std::sync::mpsc::Receiver<ControlRequest>>,
     /// Admitted `ui.screenshot` requests: count/byte budgets, retries and completion slots.
     shots: control::Shots,

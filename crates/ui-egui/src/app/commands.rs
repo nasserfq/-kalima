@@ -522,6 +522,15 @@ impl WordApp {
                 #[cfg(target_arch = "wasm32")]
                 Some(_) => return Some(Err("connecting AI apps needs the desktop app".into())),
             },
+            // Home ▸ AI Agent: shows or hides the pane (`value`); `ask` sends a request as if typed.
+            "ui.agentPane" => {
+                if let Some(text) = s("ask") {
+                    let Some(ctx) = self.ctx.clone() else { return Some(Err("the AI Agent needs a window".into())) };
+                    return Some(crate::agent_ui::ask(self, &ctx, text).map(|()| Value::Null));
+                }
+                crate::agent_ui::toggle(self, p.get("value").and_then(Value::as_bool));
+                Value::Null
+            }
             "ui.tab" => {
                 let tab = s("tab").unwrap_or("Home").to_string();
                 if tab == "File" {

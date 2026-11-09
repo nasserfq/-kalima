@@ -255,4 +255,52 @@ impl Session {
     pub fn clear_versions(&mut self) {
         self.versions.clear();
     }
+
+    /// Like [`Self::merge_undo_since`], and the merged step is called `label`: one Undo takes back
+    /// everything an AI agent did in a turn, and the Undo button names it. Returns whether there was
+    /// a step to name.
+    pub fn squash_undo_since(&mut self, mark: u64, label: &str) -> bool {
+        let start = usize::try_from(mark.saturating_sub(self.undo_evicted)).unwrap_or(usize::MAX);
+        let Some(first) = self.history.get(start) else { return false };
+        // The first step since the mark holds the document as it was before them all.
+        let mut step = Undo::clone(first);
+        step.label = label.to_string();
+        self.history.truncate(start);
+        self.history.push(Arc::new(step));
+        self.typing_open = false;
+        self.join_anchor = true;
+        true
+    }
+}
+
+#[cfg(test)]
+mod squash_tests {
+    use serde_json::json;
+    use wordcraft_doc::StoryRef;
+
+    use super::Session;
+
+    /// Everything run after the mark comes back with one Undo, and what came before stays.
+    #[test]
+    fn one_undo_takes_back_a_whole_agent_turn() {
+        let mut s = Session::new(wordcraft_doc::Document::new());
+        s.run("text.insert", &json!({"text": "Before. "})).unwrap();
+        s.close_typing();
+        let mark = s.undo_mark();
+        assert!(!s.squash_undo_since(mark, "Agent"), "nothing to squash yet");
+        s.run("text.insert", &json!({"text": "One. "})).unwrap();
+        s.run("text.newParagraph", &json!({})).unwrap();
+        s.run("text.insert", &json!({"text": "Two."})).unwrap();
+        s.run("select.all", &json!({})).unwrap();
+        s.run("format.bold", &json!({})).unwrap();
+        assert!(s.squash_undo_since(mark, "Agent"));
+        assert_eq!(s.undo_label(), Some("Agent"));
+        s.run("edit.undo", &json!({})).unwrap();
+        assert_eq!(s.doc.plain_text(StoryRef::Body).trim(), "Before.");
+        assert!(s.can_undo(), "the step before the mark is still there");
+        s.run("edit.redo", &json!({})).unwrap();
+        assert!(s.doc.plain_text(StoryRef::Body).contains("Two."), "and Redo brings the turn back");
+        // A mark from further back than the history goes is harmless.
+        assert!(!s.squash_undo_since(u64::MAX, "Agent"));
+    }
 }

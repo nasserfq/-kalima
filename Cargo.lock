@@ -6701,6 +6701,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "wordcraft-agent"
+version = "0.13.2"
+dependencies = [
+ "base64 0.22.1",
+ "security-framework",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "ureq",
+]
+
+[[package]]
 name = "wordcraft-cli"
 version = "0.13.2"
 dependencies = [
@@ -6951,11 +6963,14 @@ dependencies = [
  "sys-locale",
  "toml",
  "web-time",
+ "wordcraft-agent",
+ "wordcraft-control-key",
  "wordcraft-doc",
  "wordcraft-engine",
  "wordcraft-fonts",
  "wordcraft-geom",
  "wordcraft-layout",
+ "wordcraft-mcp",
  "wordcraft-render",
  "wordcraft-zotero",
  "zbus",

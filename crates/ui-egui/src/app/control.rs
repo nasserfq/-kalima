@@ -36,7 +36,10 @@ impl WordApp {
     /// Drains queued control requests, dispatches each through `control::handle`, sends its reply or
     /// admits a screenshot, then puts the receiver back.
     pub(super) fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            crate::agent_ui::drain(self, ctx);
+            return;
+        };
         while let Ok(req) = rx.try_recv() {
             let reply = req.reply.clone();
             match control::handle(self, ctx, &req) {
@@ -47,5 +50,7 @@ impl WordApp {
             }
         }
         self.control_rx = Some(rx);
+        // The AI Agent's tool calls go through the same handler, on their own channel.
+        crate::agent_ui::drain(self, ctx);
     }
 }
