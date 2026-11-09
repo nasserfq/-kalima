@@ -27,6 +27,7 @@ pub mod release;
 pub mod self_update;
 pub mod source;
 pub mod status;
+pub mod store;
 pub mod suite;
 pub mod time;
 pub mod version;

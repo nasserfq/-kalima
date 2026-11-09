@@ -48,14 +48,22 @@ impl Default for Runtime {
 impl WordApp {
     /// Whether the app asks for a newer release when it starts (off until the desktop app turns it on).
     #[cfg(not(target_arch = "wasm32"))]
+    /// A store copy never checks: its store updates it (`craft_update::store`).
     pub fn set_startup_update_check(&mut self, on: bool) {
-        self.updates_rt.startup_check = on;
+        self.updates_rt.startup_check = on && !craft_update::store::installed();
     }
 }
 
 pub(crate) fn check(app: &mut WordApp) {
     #[cfg(not(target_arch = "wasm32"))]
     {
+        // A store copy is updated by its store: show the store's updates page instead.
+        if craft_update::store::installed() {
+            if let Some(ctx) = &app.updates_rt.repaint {
+                ctx.open_url(egui::OpenUrl::new_tab(craft_update::store::updates_url()));
+            }
+            return;
+        }
         app.updates_rt.check_requested = true;
         app.updates_rt.manual_window_open = true;
         if let Some(ctx) = &app.updates_rt.repaint {
