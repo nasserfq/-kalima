@@ -5,10 +5,8 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
-  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap uap3 uap5 desktop4 rescap">
+  IgnorableNamespaces="uap uap3 rescap">
 
   <Identity
     Name="NasserAlqahtani.22450D6D75B7D"
@@ -63,24 +61,9 @@
         </uap3:Extension>
       </Extensions>
     </Application>
-    <!-- The command line and MCP server for AI apps (docs/mcp.md): `kalima-cli mcp` works from any
-         terminal or AI app through this alias. -->
-    <Application Id="KalimaCli" Executable="kalima-cli.exe" EntryPoint="Windows.FullTrustApplication" desktop4:SupportsMultipleInstances="true">
-      <uap:VisualElements
-        DisplayName="كلمة (سطر الأوامر)"
-        Description="خادم MCP وسطر أوامر كلمة"
-        BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png"
-        AppListEntry="none" />
-      <Extensions>
-        <uap5:Extension Category="windows.appExecutionAlias">
-          <uap5:AppExecutionAlias desktop4:Subsystem="console">
-            <uap5:ExecutionAlias Alias="kalima-cli.exe" />
-          </uap5:AppExecutionAlias>
-        </uap5:Extension>
-      </Extensions>
-    </Application>
+    <!-- One application only: the Store refuses a second, hidden one (AppListEntry="none") for the
+         command line as a "headless app" without a special waiver. kalima-cli.exe still ships in
+         the package, but MCP users take it from the GitHub download (docs/mcp.md). -->
   </Applications>
 
   <Capabilities>
