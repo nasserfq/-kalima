@@ -1,0 +1,33 @@
+# Temporary: one Windows test build of the وكيل branch, uploaded as a workflow artifact (no release).
+name: wakeel test build
+on:
+  push:
+    branches: [claude/wakeel-windows-test]
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      KALIMA_VERSION: 1.30.1
+      WORDCRAFT_VERSION: 1.30.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Interface translations (with Arabic)
+        shell: bash
+        run: |
+          git clone --depth 1 -b ar-wordcraft-missing-rows https://github.com/nasserfq/craft-i18n "$RUNNER_TEMP/craft-i18n"
+          echo "CRAFT_I18N_DIR=$RUNNER_TEMP/craft-i18n" >> "$GITHUB_ENV"
+          echo "CRAFT_I18N_REQUIRED=1" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        shell: bash
+        run: |
+          cargo build --release --locked -p wordcraft -p wordcraft-cli
+          mkdir -p out/Kalima
+          cp target/release/wordcraft.exe out/Kalima/Kalima.exe
+          cp target/release/wordcraft-cli.exe out/Kalima/kalima-cli.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kalima-wakeel-test-windows-x64
+          path: out/Kalima
+          retention-days: 7
