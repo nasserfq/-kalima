@@ -57,6 +57,8 @@ pub enum Pane {
     FormatShape,
     RestrictEditing,
     Comments,
+    /// Home ▸ AI Agent (وكيل): chat with a model that edits the document live.
+    Agent,
 }
 
 impl Pane {
@@ -72,6 +74,7 @@ impl Pane {
             Self::FormatShape => "Format Shape",
             Self::RestrictEditing => "Restrict Editing",
             Self::Comments => "Comments",
+            Self::Agent => "AI Agent",
         }
     }
 
@@ -87,6 +90,7 @@ impl Pane {
             Self::FormatShape => (Edge::End, 280.0),
             Self::RestrictEditing => (Edge::End, 270.0),
             Self::Comments => (Edge::End, 290.0),
+            Self::Agent => (Edge::End, 340.0),
         };
         PaneState::docked(edge, width)
     }
@@ -104,10 +108,11 @@ impl Pane {
             Self::FormatShape => "formatShape",
             Self::RestrictEditing => "restrictEditing",
             Self::Comments => "comments",
+            Self::Agent => "agent",
         }
     }
 
-    const ALL: [Self; 10] = [
+    const ALL: [Self; 11] = [
         Self::SmartArtText,
         Self::Navigation,
         Self::Clipboard,
@@ -118,6 +123,7 @@ impl Pane {
         Self::FormatShape,
         Self::RestrictEditing,
         Self::Comments,
+        Self::Agent,
     ];
 
     fn from_key(key: &str) -> Option<Self> {
@@ -136,6 +142,7 @@ impl Pane {
             Self::AltText => Some("view.altTextPane"),
             Self::FormatShape => Some("view.formatShapePane"),
             Self::Comments => Some("view.commentsPane"),
+            Self::Agent => Some("ui.agentPane"),
             Self::RestrictEditing => None,
         }
     }
@@ -143,6 +150,9 @@ impl Pane {
 
 impl PaneContent<Pane> for Content<'_> {
     fn title(&self, pane: &Pane) -> String {
+        if *pane == Pane::Agent {
+            return crate::agent_ui::title().into();
+        }
         tl!(pane.title()).into()
     }
 
@@ -161,6 +171,7 @@ impl PaneContent<Pane> for Content<'_> {
             }
             Pane::RestrictEditing => crate::dialogs_review::restrict_pane(app, ui),
             Pane::Comments => comments(app, ui),
+            Pane::Agent => crate::agent_ui::pane(app, ui),
         }
     }
 
