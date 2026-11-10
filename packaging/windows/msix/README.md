@@ -32,10 +32,15 @@ Copy-Item kalima-*-store.msix test.msix
 Add-AppxPackage test.msix
 ```
 
-Then check: open a .docx from Explorer, save, print, `kalima-cli --help` in a new terminal, and
+Then check: open a .docx from Explorer, save, print, and
 Arabic spelling. Remove it with `Get-AppxPackage *22450D6D75B7D* | Remove-AppxPackage`.
 
 ## Uploading
 
 Partner Center › كلمة › Start submission › Packages: upload the unsigned `.msix` from the workflow
 artifact. Each new upload needs a higher version, which the workflow's run number gives.
+
+The package has one application. A second one hidden from Start (the old `kalima-cli` alias,
+`AppListEntry="none"`) was refused as a "headless app", which needs a waiver from Microsoft.
+`runFullTrust` gives a warning on upload: explain it under Submission options › Restricted
+capabilities ("a desktop word processor that opens and saves the user's documents").
