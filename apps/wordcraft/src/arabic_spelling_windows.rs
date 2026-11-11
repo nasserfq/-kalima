@@ -12,7 +12,15 @@ static LANG: OnceLock<&'static str> = OnceLock::new();
 /// Register the system's Arabic spell checker. When Windows has none, install it once (in the
 /// background; Windows asks to allow it) and register it when that's done. Turned off with
 /// Options › Proofing › Check spelling as you type, like every language.
+///
+/// Runs on its own thread: asking Windows' spell checker initializes COM as multithreaded on the
+/// calling thread, and on the main thread that made winit's `OleInitialize` (drag and drop) fail
+/// when the window opened, so كلمة quit at once on every start.
 pub fn register() {
+    std::thread::spawn(register_now);
+}
+
+fn register_now() {
     if let Some(lang) = ["ar-SA", "ar"].into_iter().find(|l| kalima_win_spell::is_supported(l)) {
         set(lang);
         return;
